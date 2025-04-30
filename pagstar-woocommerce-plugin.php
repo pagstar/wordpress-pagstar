@@ -184,6 +184,73 @@ function pagstar_sanitize_filename($filename) {
     return $filename;
 }
 
+// Função para validar o conteúdo do certificado CRT
+function pagstar_validate_certificate_content($cert_content) {
+    // Verificar se o certificado começa e termina com os marcadores corretos
+    if (!preg_match('/^-----BEGIN CERTIFICATE-----\n.*\n-----END CERTIFICATE-----$/s', $cert_content)) {
+        return new WP_Error('invalid_cert_format', 'Formato do certificado inválido');
+    }
+
+    // Verificar se o certificado é válido usando OpenSSL
+    $cert = openssl_x509_read($cert_content);
+    if (!$cert) {
+        return new WP_Error('invalid_cert', 'Certificado inválido ou corrompido');
+    }
+
+    // Verificar data de expiração
+    $validTo = openssl_x509_parse($cert, true)['validTo_time_t'];
+    if ($validTo < time()) {
+        return new WP_Error('expired_cert', 'Certificado expirado');
+    }
+
+    // Verificar se o certificado é emitido para PAGSTAR
+    $cert_data = openssl_x509_parse($cert, true);
+    if (!isset($cert_data['subject']['CN']) || strpos($cert_data['subject']['CN'], 'PAGSTAR') === false) {
+        return new WP_Error('invalid_cert_issuer', 'Certificado não emitido para PAGSTAR');
+    }
+
+    openssl_x509_free($cert);
+    return true;
+}
+
+// Função para validar o conteúdo da chave privada
+function pagstar_validate_private_key($key_content) {
+    // Verificar se a chave começa e termina com os marcadores corretos
+    if (!preg_match('/^-----BEGIN PRIVATE KEY-----\n.*\n-----END PRIVATE KEY-----$/s', $key_content)) {
+        return new WP_Error('invalid_key_format', 'Formato da chave privada inválido');
+    }
+
+    // Verificar se a chave é válida usando OpenSSL
+    $key = openssl_pkey_get_private($key_content);
+    if (!$key) {
+        return new WP_Error('invalid_key', 'Chave privada inválida ou corrompida');
+    }
+
+    openssl_pkey_free($key);
+    return true;
+}
+
+// Função para verificar a integridade do arquivo
+function pagstar_verify_file_integrity($file_path) {
+    if (!file_exists($file_path)) {
+        return new WP_Error('file_not_found', 'Arquivo não encontrado');
+    }
+
+    // Verificar se o arquivo foi modificado recentemente
+    $file_mtime = filemtime($file_path);
+    if (time() - $file_mtime < 60) { // Arquivo modificado nos últimos 60 segundos
+        return new WP_Error('recent_modification', 'Arquivo modificado recentemente');
+    }
+
+    // Verificar permissões do arquivo
+    $perms = substr(sprintf('%o', fileperms($file_path)), -4);
+    if ($perms !== '0600') {
+        return new WP_Error('invalid_permissions', 'Permissões do arquivo devem ser 0600');
+    }
+
+    return true;
+}
+
 function pagstar_settings_page()
 {
     // Verificação de capacidade mais específica
@@ -314,9 +381,6 @@ function pagstar_settings_page()
                 $success = false;
             }
 
-            // Inicializar finfo para validação de MIME
-            $finfo = new finfo(FILEINFO_MIME_TYPE);
-
             // Upload CRT
             if (!empty($_FILES['pagstar_crt']['tmp_name'])) {
                 // Validação de tamanho máximo (5KB)
@@ -329,16 +393,18 @@ function pagstar_settings_page()
                         $errors[] = 'O arquivo CRT deve ter a extensão .crt';
                         $success = false;
                     } else {
-                        $mime = $finfo->file($_FILES['pagstar_crt']['tmp_name']);
-                        $allowed_crt_types = ['application/x-x509-ca-cert', 'application/pkix-cert', 'application/x-pem-file', 'text/plain'];
-                        if (in_array($mime, $allowed_crt_types)) {
+                        // Validar conteúdo do certificado
+                        $cert_content = file_get_contents($_FILES['pagstar_crt']['tmp_name']);
+                        $cert_validation = pagstar_validate_certificate_content($cert_content);
+                        if (is_wp_error($cert_validation)) {
+                            $errors[] = $cert_validation->get_error_message();
+                            $success = false;
+                        } else {
                             $safe_filename = pagstar_sanitize_filename($_FILES['pagstar_crt']['name']);
                             $crt_path = $upload_dir . $safe_filename;
                             move_uploaded_file($_FILES['pagstar_crt']['tmp_name'], $crt_path);
+                            chmod($crt_path, 0600); // Definir permissões seguras
                             update_option('pagstar_crt', $crt_path);
-                        } else {
-                            $errors[] = 'Arquivo CRT inválido';
-                            $success = false;
                         }
                     }
                 }
@@ -356,18 +422,35 @@ function pagstar_settings_page()
                         $errors[] = 'O arquivo KEY deve ter a extensão .key';
                         $success = false;
                     } else {
-                        $mime = $finfo->file($_FILES['pagstar_key']['tmp_name']);
-                        $allowed_key_types = ['application/x-pem-file', 'text/plain'];
-                        if (in_array($mime, $allowed_key_types)) {
+                        // Validar conteúdo da chave privada
+                        $key_content = file_get_contents($_FILES['pagstar_key']['tmp_name']);
+                        $key_validation = pagstar_validate_private_key($key_content);
+                        if (is_wp_error($key_validation)) {
+                            $errors[] = $key_validation->get_error_message();
+                            $success = false;
+                        } else {
                             $safe_filename = pagstar_sanitize_filename($_FILES['pagstar_key']['name']);
                             $key_path = $upload_dir . $safe_filename;
                             move_uploaded_file($_FILES['pagstar_key']['tmp_name'], $key_path);
+                            chmod($key_path, 0600); // Definir permissões seguras
                             update_option('pagstar_key', $key_path);
-                        } else {
-                            $errors[] = 'Arquivo KEY inválido';
-                            $success = false;
                         }
                     }
+                }
+            }
+
+            // Verificar integridade dos arquivos após upload
+            if ($crt_path && $key_path) {
+                $crt_integrity = pagstar_verify_file_integrity($crt_path);
+                $key_integrity = pagstar_verify_file_integrity($key_path);
+                
+                if (is_wp_error($crt_integrity)) {
+                    $errors[] = 'Erro na integridade do certificado: ' . $crt_integrity->get_error_message();
+                    $success = false;
+                }
+                if (is_wp_error($key_integrity)) {
+                    $errors[] = 'Erro na integridade da chave: ' . $key_integrity->get_error_message();
+                    $success = false;
                 }
             }
 
