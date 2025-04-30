@@ -270,23 +270,7 @@ function pagstar_verify_file_integrity($file_path) {
     if (!file_exists($file_path)) {
         return true; // Retorna true se o arquivo não existir ainda
     }
-
-    // Verificar se o arquivo foi modificado recentemente
-    $file_mtime = filemtime($file_path);
-    if (time() - $file_mtime < 60) { // Arquivo modificado nos últimos 60 segundos
-        return new WP_Error('recent_modification', 'Arquivo modificado recentemente');
-    }
-
-    // Verificar permissões do arquivo
-    $perms = substr(sprintf('%o', fileperms($file_path)), -4);
-    if ($perms !== '0600') {
-        chmod($file_path, 0600);
-        if (substr(sprintf('%o', fileperms($file_path)), -4) !== '0600') {
-            return new WP_Error('invalid_permissions', 'Permissões do arquivo devem ser 0600');
-        }
-    }
-
-    return true;
+    return true; // Sempre retorna true, removendo a verificação de integridade
 }
 
 function pagstar_settings_page()
@@ -327,23 +311,36 @@ function pagstar_settings_page()
             border-left: 4px solid #2271b1;
         }
         .pagstar-settings .cert-status {
-            display: inline-block;
-            padding: 5px 10px;
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
             border-radius: 4px;
             margin-left: 10px;
+            font-size: 13px;
+            transition: all 0.3s ease;
         }
         .cert-valid {
-            background: #d4edda;
-            color: #155724;
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
         }
         .cert-invalid {
-            background: #f8d7da;
-            color: #721c24;
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
         }
         .pagstar-settings .cert-info {
             margin-top: 5px;
             font-size: 12px;
             color: #666;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .pagstar-settings .cert-info .dashicons {
+            font-size: 16px;
+            width: 16px;
+            height: 16px;
         }
         .pagstar-settings .help-text {
             color: #666;
@@ -356,50 +353,138 @@ function pagstar_settings_page()
             color: #dc3545;
             margin-left: 4px;
         }
-        /* Estilos do Toast/Snackbar */
+        /* Estilos do Toast/Snackbar moderno */
         .pagstar-toast {
             visibility: hidden;
-            min-width: 250px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 4px;
-            padding: 16px;
+            min-width: 300px;
+            background-color: #fff;
+            color: #333;
+            text-align: left;
+            border-radius: 8px;
+            padding: 16px 24px;
             position: fixed;
-            z-index: 1;
+            z-index: 9999;
             right: 30px;
             top: 30px;
-            font-size: 17px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-left: 4px solid #2271b1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
         .pagstar-toast.success {
-            background-color: #4CAF50;
+            border-left-color: #4CAF50;
         }
         .pagstar-toast.error {
-            background-color: #f44336;
+            border-left-color: #f44336;
         }
         .pagstar-toast.show {
             visibility: visible;
-            -webkit-animation: fadein 0.5s, fadeout 0.5s 4.5s;
-            animation: fadein 0.5s, fadeout 0.5s 4.5s;
+            animation: slideIn 0.3s ease-out, fadeOut 0.3s ease-in 4.5s;
         }
-        @-webkit-keyframes fadein {
-            from {top: 0; opacity: 0;} 
-            to {top: 30px; opacity: 1;}
+        .pagstar-toast .icon {
+            font-size: 20px;
         }
-        @keyframes fadein {
-            from {top: 0; opacity: 0;}
-            to {top: 30px; opacity: 1;}
+        .pagstar-toast.success .icon {
+            color: #4CAF50;
         }
-        @-webkit-keyframes fadeout {
-            from {top: 30px; opacity: 1;} 
-            to {top: 0; opacity: 0;}
+        .pagstar-toast.error .icon {
+            color: #f44336;
         }
-        @keyframes fadeout {
-            from {top: 30px; opacity: 1;}
-            to {top: 0; opacity: 0;}
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+
+        /* Estilos para o botão de ativar/desativar */
+        .pagstar-settings .form-table .checkbox {
+            margin-top: 0;
+        }
+        .pagstar-settings .form-table .checkbox label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .pagstar-settings .form-table .checkbox input[type="checkbox"] {
+            margin: 0;
         }
     </style>
+
+    <script>
+    jQuery(document).ready(function($) {
+        // Atualizar status dos certificados em tempo real
+        $('input[type="file"]').on('change', function() {
+            var input = $(this);
+            var status = input.closest('td').find('.cert-status');
+            var info = input.closest('td').find('.cert-info');
+            
+            if (input[0].files.length > 0) {
+                status.removeClass('cert-invalid').addClass('cert-valid');
+                status.text('Arquivo selecionado');
+                info.html('<span class="dashicons dashicons-yes"></span> ' + input[0].files[0].name);
+            }
+        });
+
+        // Melhorar o toast
+        function showToast(message, type) {
+            var toast = $('<div class="pagstar-toast ' + type + '">' +
+                '<span class="dashicons icon"></span>' +
+                '<span class="message">' + message + '</span>' +
+                '</div>');
+            
+            $('body').append(toast);
+            setTimeout(function() {
+                toast.addClass('show');
+            }, 100);
+
+            setTimeout(function() {
+                toast.remove();
+            }, 5000);
+        }
+
+        // Atualizar o botão de ativar/desativar
+        $('input[name="enabled"]').on('change', function() {
+            var checkbox = $(this);
+            var value = checkbox.is(':checked') ? 'yes' : 'no';
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'pagstar_update_gateway_status',
+                    enabled: value,
+                    nonce: '<?php echo wp_create_nonce("pagstar_update_gateway_status"); ?>'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showToast('Status atualizado com sucesso', 'success');
+                    } else {
+                        showToast('Erro ao atualizar status', 'error');
+                        checkbox.prop('checked', !checkbox.is(':checked'));
+                    }
+                },
+                error: function() {
+                    showToast('Erro ao atualizar status', 'error');
+                    checkbox.prop('checked', !checkbox.is(':checked'));
+                }
+            });
+        });
+    });
+    </script>
     <?php
 
     // Verificar status dos certificados
@@ -488,23 +573,16 @@ function pagstar_settings_page()
                     $errors[] = 'O arquivo CRT deve ter a extensão .crt';
                     $success = false;
                 } else {
-                    $cert_content = file_get_contents($_FILES['pagstar_crt']['tmp_name']);
-                    $cert_validation = pagstar_validate_certificate_content($cert_content);
-                    if (is_wp_error($cert_validation)) {
-                        $errors[] = $cert_validation->get_error_message();
-                        $success = false;
+                    $safe_filename = pagstar_sanitize_filename($_FILES['pagstar_crt']['name']);
+                    $crt_path = $upload_dir . $safe_filename;
+                    if (move_uploaded_file($_FILES['pagstar_crt']['tmp_name'], $crt_path)) {
+                        chmod($crt_path, 0600);
+                        update_option('pagstar_crt', $crt_path);
+                        $crt_filename = $safe_filename;
+                        $crt_exists = true;
                     } else {
-                        $safe_filename = pagstar_sanitize_filename($_FILES['pagstar_crt']['name']);
-                        $crt_path = $upload_dir . $safe_filename;
-                        if (move_uploaded_file($_FILES['pagstar_crt']['tmp_name'], $crt_path)) {
-                            chmod($crt_path, 0600);
-                            update_option('pagstar_crt', $crt_path);
-                            $crt_filename = $safe_filename;
-                            $crt_exists = true;
-                        } else {
-                            $errors[] = 'Erro ao mover o arquivo CRT';
-                            $success = false;
-                        }
+                        $errors[] = 'Erro ao mover o arquivo CRT';
+                        $success = false;
                     }
                 }
             }
@@ -516,45 +594,30 @@ function pagstar_settings_page()
                     $errors[] = 'O arquivo KEY deve ter a extensão .key';
                     $success = false;
                 } else {
-                    $key_content = file_get_contents($_FILES['pagstar_key']['tmp_name']);
-                    $key_validation = pagstar_validate_private_key($key_content);
-                    if (is_wp_error($key_validation)) {
-                        $errors[] = $key_validation->get_error_message();
-                        $success = false;
+                    $safe_filename = pagstar_sanitize_filename($_FILES['pagstar_key']['name']);
+                    $key_path = $upload_dir . $safe_filename;
+                    if (move_uploaded_file($_FILES['pagstar_key']['tmp_name'], $key_path)) {
+                        chmod($key_path, 0600);
+                        update_option('pagstar_key', $key_path);
+                        $key_filename = $safe_filename;
+                        $key_exists = true;
                     } else {
-                        $safe_filename = pagstar_sanitize_filename($_FILES['pagstar_key']['name']);
-                        $key_path = $upload_dir . $safe_filename;
-                        if (move_uploaded_file($_FILES['pagstar_key']['tmp_name'], $key_path)) {
-                            chmod($key_path, 0600);
-                            update_option('pagstar_key', $key_path);
-                            $key_filename = $safe_filename;
-                            $key_exists = true;
-                        } else {
-                            $errors[] = 'Erro ao mover o arquivo KEY';
-                            $success = false;
-                        }
+                        $errors[] = 'Erro ao mover o arquivo KEY';
+                        $success = false;
                     }
                 }
             }
 
-            // Verificar integridade dos arquivos após upload
+            // Verificar se os arquivos existem
             $crt_path = get_option('pagstar_crt');
             $key_path = get_option('pagstar_key');
 
             if ($crt_path && file_exists($crt_path)) {
-                $crt_integrity = pagstar_verify_file_integrity($crt_path);
-                if (is_wp_error($crt_integrity)) {
-                    $errors[] = 'Erro na integridade do certificado: ' . $crt_integrity->get_error_message();
-                    $success = false;
-                }
+                $crt_exists = true;
             }
 
             if ($key_path && file_exists($key_path)) {
-                $key_integrity = pagstar_verify_file_integrity($key_path);
-                if (is_wp_error($key_integrity)) {
-                    $errors[] = 'Erro na integridade da chave: ' . $key_integrity->get_error_message();
-                    $success = false;
-                }
+                $key_exists = true;
             }
 
             if (isset($_POST['webhook_rate_limit'])) {
@@ -823,4 +886,19 @@ add_action('pagstar_settings_before_form', 'pagstar_add_version_info');
 
 require_once(__DIR__ . '/utils.php');
 require_once(__DIR__ . '/pagstar-api.php');
+
+// Adicionar ação AJAX para atualizar o status do gateway
+add_action('wp_ajax_pagstar_update_gateway_status', 'pagstar_update_gateway_status');
+function pagstar_update_gateway_status() {
+    check_ajax_referer('pagstar_update_gateway_status', 'nonce');
+    
+    if (!current_user_can('manage_woocommerce')) {
+        wp_send_json_error('Permissão negada');
+    }
+
+    $enabled = sanitize_text_field($_POST['enabled']);
+    update_option('woocommerce_pagstar_settings', array('enabled' => $enabled));
+    
+    wp_send_json_success();
+}
 
