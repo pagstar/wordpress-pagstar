@@ -6,6 +6,11 @@ on:
       - main
     paths:
       - 'pagstar-woocommerce-plugin.php'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'pagstar-woocommerce-plugin.php'
 
 permissions:
   contents: write
@@ -51,7 +56,7 @@ jobs:
           fi
 
       - name: Atualizar CHANGELOG
-        if: steps.version.outputs.changed == 'true'
+        if: steps.version.outputs.changed == 'true' && github.event_name == 'push'
         run: |
           CURRENT_DATE=$(date +"%Y-%m-%d")
           NEW_VERSION=${{ steps.version.outputs.new_version }}
@@ -81,7 +86,7 @@ jobs:
           git push origin HEAD:main
 
       - name: Criar Release
-        if: steps.version.outputs.changed == 'true'
+        if: steps.version.outputs.changed == 'true' && github.event_name == 'push'
         uses: softprops/action-gh-release@v1
         with:
           name: "Version ${{ steps.version.outputs.new_version }}"

@@ -149,9 +149,7 @@ add_action('admin_menu', 'pagstar_admin_menu');
 // Função para backup automático de configurações
 function pagstar_backup_settings($settings) {
     $backup_dir = WP_CONTENT_DIR . '/pagstar_backups/';
-    if (!file_exists($backup_dir)) {
-        mkdir($backup_dir, 0700, true);
-    }
+    wp_mkdir_p($backup_dir);
 
     $backup_file = $backup_dir . 'settings_backup_' . date('Y-m-d_H-i-s') . '.json';
     $backup_data = array(
@@ -454,6 +452,16 @@ function pagstar_settings_page()
                 }
             }
 
+            if (isset($_POST['webhook_rate_limit'])) {
+                $webhook_rate_limit = intval($_POST['webhook_rate_limit']);
+                if ($webhook_rate_limit < 1 || $webhook_rate_limit > 20000) {
+                    $errors[] = 'O limite de requisições deve estar entre 1 e 20.000';
+                    $success = false;
+                } else {
+                    update_option('pagstar_webhook_rate_limit', $webhook_rate_limit);
+                }
+            }
+
             if ($success) {
                 echo '<div class="notice notice-success is-dismissible"><p>Configurações salvas com sucesso! Backup criado em: ' . esc_html($backup_file) . '</p></div>';
             }
@@ -578,6 +586,15 @@ function pagstar_settings_page()
                                value="<?php echo esc_attr(get_option('pagstar_expiration_time', 3600)); ?>" 
                                min="300" max="86400" step="60" class="regular-text">
                         <span class="help-text">Tempo em segundos para expiração do QR Code (mínimo: 5 minutos, máximo: 24 horas)</span>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="webhook_rate_limit">Limite de Requisições por Minuto:</label></th>
+                    <td>
+                        <input type="number" name="webhook_rate_limit" id="webhook_rate_limit" 
+                               value="<?php echo esc_attr(get_option('pagstar_webhook_rate_limit', 100)); ?>" 
+                               min="1" max="20000" class="regular-text">
+                        <span class="help-text">Número máximo de requisições permitidas por minuto no webhook (padrão: 100, máximo: 20.000)</span>
                     </td>
                 </tr>
             </table>

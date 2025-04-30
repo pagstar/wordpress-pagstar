@@ -5,6 +5,25 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.0.2] - 2024-03-21
+
+### Adicionado
+- Validação de CPF no webhook
+- Função utilitária para validação de CPF
+- Sistema de rotação de logs diária
+- Backup automático de logs antigos
+
+### Melhorado
+- Organização do código com arquivo utils.php
+- Tratamento de erros no webhook
+- Sistema de logs mais robusto
+- Sanitização de dados recebidos
+
+### Corrigido
+- Erro de digitação no campo txid
+- Permissões de diretório usando wp_mkdir_p
+- Validação de campos obrigatórios
+
 ## [1.0.1] - 2024-03-20
 
 ### Adicionado
