@@ -6,23 +6,23 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . '/.' . basename( plugin_dir_path
 class WC_Gateway_FakePay extends WC_Payment_Gateway {
     public function __construct() {
 	
-            $this->url_api = 'https://api.pagstar.com/api/v2';
+        $this->url_api = 'https://api.pagstar.com/api/v2';
 			
 			
-			// Obtém a URL da pasta do plugin
-$plugin_url = plugins_url('', __FILE__);
+              // Obtém a URL da pasta do plugin
+        $plugin_url = plugins_url('', __FILE__);
 
-// Caminho relativo até o arquivo api.php
-$api_file_relative_path = '/api.php';
+        // Caminho relativo até o arquivo api.php
+        $api_file_relative_path = '/api.php';
 
-// Combina a URL da pasta do plugin com o caminho relativo do arquivo api.php
-$api_url = $plugin_url . $api_file_relative_path;
+        // Combina a URL da pasta do plugin com o caminho relativo do arquivo api.php
+        $api_url = $plugin_url . $api_file_relative_path;
 
-	
-	$this->pagstar_mode = get_option('pagstar_mode');
+          
+          $this->pagstar_mode = get_option('pagstar_mode');
 
-// Agora você tem a URL completa do arquivo api.php
-  $this->urll = $api_url;
+        // Agora você tem a URL completa do arquivo api.php
+          $this->urll = $api_url;
       
 
         $this->id = 'pagstar';
@@ -30,7 +30,7 @@ $api_url = $plugin_url . $api_file_relative_path;
         $this->method_title = 'Pagstar';
         $this->method_description = 'Pagamento via Pagstar ';
         $this->title = 'Pagstar';
-        $this->icon = 'https://sorteagora.net/wp-content/plugins/simple_payment_plugin/pix.png'; // URL do ícone do gateway, se houver.
+        $this->icon = plugins_url('pagstar.png', __FILE__);; // URL do ícone do gateway, se houver.
         $this->has_fields = false;
         $this->init_form_fields();
         $this->init_settings();
@@ -85,12 +85,7 @@ $api_url = $plugin_url . $api_file_relative_path;
     // Restante do código permanece inalterado
     // Substitua as variáveis $tenant_id, $token e $user_agent pelos valores obtidos das opções do WordPress
 
-	$tenant_id = '';
-    if (get_option('pagstar_mode') === 'production') {
-			$tenant_id = get_option('pagstar_tenant_id');	
-				}else{
-			$tenant_id =  'ebb98450-2e71-4aa3-9d25-8672f3df69c8';
-	}
+    $tenant_id = get_option('client_id');	
 
     $data = array(
         'value' => $order->get_total(), 

@@ -156,11 +156,14 @@ function pagstar_settings_page()
 
     // Salvar as configurações quando o formulário é enviado
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        update_option('pagstar_tenant_id', sanitize_text_field($_POST['tenant_id']));
-        update_option('pagstar_token', sanitize_text_field($_POST['token']));
+        update_option('client_id', sanitize_text_field($_POST['client_id']));
+        update_option('client_secret', sanitize_text_field($_POST['client_secret']));
+        update_option('pix_key', sanitize_text_field($_POST['pix_key']));
+        update_option('pagstar_crt', sanitize_text_field($_POST['pagstar_crt']));
+        update_option('pagstar_key', sanitize_text_field($_POST['pagstar_key']));
         update_option('pagstar_user_agent', sanitize_text_field($_POST['user_agent']));
-		update_option('pagstar_mode', sanitize_text_field($_POST['pagstar_mode']));
 		update_option('link_r', sanitize_text_field($_POST['link_r']));
+		update_option('pagstar_mode', 'production');
 		
 		
         echo '<div class="notice notice-success"><p>Configurações salvas com sucesso!</p></div>';
@@ -169,19 +172,10 @@ function pagstar_settings_page()
     // Renderizar o formulário
     ?>
    <div class="wrap">
-        <h1>Configurações do Pagstar</h1>
+        <h1>Pagstar Settings</h1>
         <form method="post" action="">
             <table class="form-table">
               <!-- Campo de seleção para o modo de operação -->
-<tr>
-    <th><label for="pagstar_mode">Modo de operação:</label></th>
-    <td>
-        <select name="pagstar_mode" id="pagstar_mode">
-            <option value="production" <?php selected(get_option('pagstar_mode'), 'production'); ?>>Produção</option>
-            <option value="sandbox" <?php selected(get_option('pagstar_mode'), 'sandbox'); ?>>Sandbox</option>
-        </select> 
-    </td>
-</tr>
                 <!-- Campo para a URL da API de sandbox 
                 <tr>
                     <th><label for="pagstar_sandbox_url">URL da API de Sandbox:</label></th>
@@ -190,15 +184,21 @@ function pagstar_settings_page()
                     </td>
                 </tr>-->
                 <tr>
-                    <th><label for="tenant_id">Tenant id:</label></th>
+                    <th><label for="client_id">Client ID:</label></th>
                     <td>
-                        <input type="text" name="tenant_id" id="tenant_id" value="<?php echo esc_attr(get_option('pagstar_tenant_id')); ?>" class="regular-text" required>
+                        <input type="text" name="client_id" id="client_id" value="<?php echo esc_attr(get_option('client_id')); ?>" class="regular-text" required>
                     </td>
                 </tr>
                 <tr>
-                    <th><label for="token">Token:</label></th>
+                    <th><label for="client_secret">Client Secret:</label></th>
                     <td>
-                        <input type="text" name="token" id="token" value="<?php echo esc_attr(get_option('pagstar_token')); ?>" class="regular-text" required>
+                        <input type="text" name="client_secret" id="client_secret" value="<?php echo esc_attr(get_option('client_secret')); ?>" class="regular-text" required>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="pix_key">Pix Key:</label></th>
+                    <td>
+                        <input type="text" name="pix_key" id="pix_key" value="<?php echo esc_attr(get_option('pix_key')); ?>" class="regular-text" required>
                     </td>
                 </tr>
                 <tr>
@@ -213,6 +213,19 @@ function pagstar_settings_page()
                     <th><label for="user_agent">Link de redirecionamento após pagamento feito</label></th>
                     <td>
                         <input type="text" name="link_r" id="user_agent" value="<?php echo esc_attr(get_option('link_r')); ?>" class="regular-text" required>
+                    </td>
+                </tr>
+                <h1>MTLS certificates provided by Pagstar</h1>
+                <tr>
+                    <th><label for="pagstar_crt">Certificate CRT:</label></th>
+                    <td>
+                        <input type="text" name="pagstar_crt" id="pagstar_crt" value="<?php echo esc_attr(get_option('pagstar_crt')); ?>" class="regular-text" required>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="pagstar_key">Certificate KEY:</label></th>
+                    <td>
+                        <input type="text" name="pagstar_key" id="pagstar_key" value="<?php echo esc_attr(get_option('pagstar_key')); ?>" class="regular-text" required>
                     </td>
                 </tr>
             </table>
