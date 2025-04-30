@@ -153,86 +153,289 @@ function pagstar_settings_page()
         return;
     }
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        update_option('client_id', sanitize_text_field($_POST['client_id']));
-        update_option('client_secret', sanitize_text_field($_POST['client_secret']));
-        update_option('pix_key', sanitize_text_field($_POST['pix_key']));
-        update_option('pagstar_user_agent', sanitize_text_field($_POST['user_agent']));
-        update_option('link_r', sanitize_text_field($_POST['link_r']));
-        update_option('pagstar_mode', 'production');
+    // Adicionar estilos CSS
+    ?>
+    <style>
+        .pagstar-settings {
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        .pagstar-settings .form-table {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .pagstar-settings .form-table th {
+            width: 200px;
+            padding: 15px 10px;
+        }
+        .pagstar-settings .form-table td {
+            padding: 15px 10px;
+        }
+        .pagstar-settings input[type="text"] {
+            width: 100%;
+            max-width: 400px;
+        }
+        .pagstar-settings .section-title {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #2271b1;
+        }
+        .pagstar-settings .cert-status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        .cert-valid {
+            background: #d4edda;
+            color: #155724;
+        }
+        .cert-invalid {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .pagstar-settings .help-text {
+            color: #666;
+            font-style: italic;
+            margin-top: 5px;
+            display: block;
+        }
+        .pagstar-settings .required-field::after {
+            content: "*";
+            color: #dc3545;
+            margin-left: 4px;
+        }
+    </style>
+    <?php
 
-        $upload_dir = ABSPATH . 'certificados_pagstar/';
-        if (!file_exists($upload_dir)) {
-            mkdir($upload_dir, 0700, true);
+    // Verificar status dos certificados
+    $crt_path = get_option('pagstar_crt');
+    $key_path = get_option('pagstar_key');
+    $crt_exists = file_exists($crt_path);
+    $key_exists = file_exists($key_path);
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && check_admin_referer('pagstar_settings_nonce', 'pagstar_nonce')) {
+        $errors = [];
+        $success = true;
+
+        // Validação dos campos
+        if (empty($_POST['client_id'])) {
+            $errors[] = 'Client ID é obrigatório';
+            $success = false;
+        }
+        if (empty($_POST['client_secret'])) {
+            $errors[] = 'Client Secret é obrigatório';
+            $success = false;
+        }
+        if (empty($_POST['pix_key'])) {
+            $errors[] = 'Chave PIX é obrigatória';
+            $success = false;
+        }
+        if (empty($_POST['user_agent'])) {
+            $errors[] = 'Empresa/Contato é obrigatório';
+            $success = false;
+        }
+        if (empty($_POST['link_r']) || !filter_var($_POST['link_r'], FILTER_VALIDATE_URL)) {
+            $errors[] = 'URL de redirecionamento inválida';
+            $success = false;
         }
 
-        $finfo = new finfo(FILEINFO_MIME_TYPE);
-
-        // Upload CRT
-        if (!empty($_FILES['pagstar_crt']['tmp_name'])) {
-            $mime = $finfo->file($_FILES['pagstar_crt']['tmp_name']);
-            $allowed_crt_types = ['application/x-x509-ca-cert', 'application/pkix-cert', 'application/x-pem-file', 'text/plain'];
-            if (in_array($mime, $allowed_crt_types)) {
-                $crt_path = $upload_dir . 'certificado.crt';
-                move_uploaded_file($_FILES['pagstar_crt']['tmp_name'], $crt_path);
-                update_option('pagstar_crt', $crt_path);
+        if ($success) {
+            update_option('client_id', sanitize_text_field($_POST['client_id']));
+            update_option('client_secret', sanitize_text_field($_POST['client_secret']));
+            update_option('pix_key', sanitize_text_field($_POST['pix_key']));
+            update_option('pagstar_user_agent', sanitize_text_field($_POST['user_agent']));
+            update_option('link_r', esc_url_raw($_POST['link_r']));
+            update_option('pagstar_payment_info', sanitize_textarea_field($_POST['payment_info']));
+            
+            // Validação do tempo de expiração
+            $expiration_time = intval($_POST['expiration_time']);
+            if ($expiration_time >= 300 && $expiration_time <= 86400) {
+                update_option('pagstar_expiration_time', $expiration_time);
             } else {
-                echo '<div class="notice notice-error"><p>Arquivo CRT inválido.</p></div>';
+                $errors[] = 'Tempo de expiração inválido. Deve estar entre 300 e 86400 segundos.';
+                $success = false;
+            }
+
+            $upload_dir = ABSPATH . 'certificados_pagstar/';
+            if (!file_exists($upload_dir)) {
+                mkdir($upload_dir, 0700, true);
+            }
+
+            $finfo = new finfo(FILEINFO_MIME_TYPE);
+
+            // Upload CRT
+            if (!empty($_FILES['pagstar_crt']['tmp_name'])) {
+                $file_info = pathinfo($_FILES['pagstar_crt']['name']);
+                if (strtolower($file_info['extension']) !== 'crt') {
+                    $errors[] = 'O arquivo CRT deve ter a extensão .crt';
+                    $success = false;
+                } else {
+                    $mime = $finfo->file($_FILES['pagstar_crt']['tmp_name']);
+                    $allowed_crt_types = ['application/x-x509-ca-cert', 'application/pkix-cert', 'application/x-pem-file', 'text/plain'];
+                    if (in_array($mime, $allowed_crt_types)) {
+                        $crt_path = $upload_dir . 'certificado.crt';
+                        move_uploaded_file($_FILES['pagstar_crt']['tmp_name'], $crt_path);
+                        update_option('pagstar_crt', $crt_path);
+                    } else {
+                        $errors[] = 'Arquivo CRT inválido';
+                        $success = false;
+                    }
+                }
+            }
+
+            // Upload KEY
+            if (!empty($_FILES['pagstar_key']['tmp_name'])) {
+                $file_info = pathinfo($_FILES['pagstar_key']['name']);
+                if (strtolower($file_info['extension']) !== 'key') {
+                    $errors[] = 'O arquivo KEY deve ter a extensão .key';
+                    $success = false;
+                } else {
+                    $mime = $finfo->file($_FILES['pagstar_key']['tmp_name']);
+                    $allowed_key_types = ['application/x-pem-file', 'text/plain'];
+                    if (in_array($mime, $allowed_key_types)) {
+                        $key_path = $upload_dir . 'chave.key';
+                        move_uploaded_file($_FILES['pagstar_key']['tmp_name'], $key_path);
+                        update_option('pagstar_key', $key_path);
+                    } else {
+                        $errors[] = 'Arquivo KEY inválido';
+                        $success = false;
+                    }
+                }
+            }
+
+            if ($success) {
+                echo '<div class="notice notice-success is-dismissible"><p>Configurações salvas com sucesso!</p></div>';
             }
         }
 
-        // Upload KEY
-        if (!empty($_FILES['pagstar_key']['tmp_name'])) {
-            $mime = $finfo->file($_FILES['pagstar_key']['tmp_name']);
-            $allowed_key_types = ['application/x-pem-file', 'text/plain'];
-            if (in_array($mime, $allowed_key_types)) {
-                $key_path = $upload_dir . 'chave.key';
-                move_uploaded_file($_FILES['pagstar_key']['tmp_name'], $key_path);
-                update_option('pagstar_key', $key_path);
-            } else {
-                echo '<div class="notice notice-error"><p>Arquivo KEY inválido.</p></div>';
-            }
+        if (!empty($errors)) {
+            echo '<div class="notice notice-error is-dismissible"><p><strong>Erro:</strong> ' . implode('<br>', $errors) . '</p></div>';
         }
-
-        echo '<div class="notice notice-success"><p>Configurações salvas com sucesso!</p></div>';
     }
     ?>
 
-    <div class="wrap">
-        <h1>Pagstar Settings</h1>
+    <div class="wrap pagstar-settings">
+        <h1>Configurações Pagstar</h1>
+        
         <form method="post" action="" enctype="multipart/form-data">
+            <?php wp_nonce_field('pagstar_settings_nonce', 'pagstar_nonce'); ?>
+            
+            <div class="section-title">
+                <h2>Credenciais da API (QR Codes)</h2>
+            </div>
+            
             <table class="form-table">
                 <tr>
-                    <th><label for="client_id">Client ID:</label></th>
-                    <td><input type="text" name="client_id" id="client_id" value="<?php echo esc_attr(get_option('client_id')); ?>" class="regular-text" required></td>
+                    <th><label for="client_id" class="required-field">Client ID:</label></th>
+                    <td>
+                        <input type="text" name="client_id" id="client_id" 
+                               value="<?php echo esc_attr(get_option('client_id')); ?>" 
+                               class="regular-text" required>
+                        <span class="help-text">ID do cliente fornecido pela Pagstar</span>
+                    </td>
                 </tr>
                 <tr>
-                    <th><label for="client_secret">Client Secret:</label></th>
-                    <td><input type="text" name="client_secret" id="client_secret" value="<?php echo esc_attr(get_option('client_secret')); ?>" class="regular-text" required></td>
+                    <th><label for="client_secret" class="required-field">Client Secret:</label></th>
+                    <td>
+                        <input type="text" name="client_secret" id="client_secret" 
+                               value="<?php echo esc_attr(get_option('client_secret')); ?>" 
+                               class="regular-text" required>
+                        <span class="help-text">Chave secreta do cliente fornecida pela Pagstar</span>
+                    </td>
                 </tr>
                 <tr>
-                    <th><label for="pix_key">Pix Key:</label></th>
-                    <td><input type="text" name="pix_key" id="pix_key" value="<?php echo esc_attr(get_option('pix_key')); ?>" class="regular-text" required></td>
+                    <th><label for="pix_key" class="required-field">Chave PIX:</label></th>
+                    <td>
+                        <input type="text" name="pix_key" id="pix_key" 
+                               value="<?php echo esc_attr(get_option('pix_key')); ?>" 
+                               class="regular-text" required>
+                        <span class="help-text">Chave PIX cadastrada na Pagstar</span>
+                    </td>
                 </tr>
                 <tr>
-                    <th><label for="user_agent">Empresa/Contato:</label></th>
-                    <td><input type="text" name="user_agent" id="user_agent" value="<?php echo esc_attr(get_option('pagstar_user_agent')); ?>" class="regular-text" required></td>
+                    <th><label for="user_agent" class="required-field">Empresa/Contato:</label></th>
+                    <td>
+                        <input type="text" name="user_agent" id="user_agent" 
+                               value="<?php echo esc_attr(get_option('pagstar_user_agent')); ?>" 
+                               class="regular-text" required>
+                        <span class="help-text">Nome da empresa ou contato responsável</span>
+                    </td>
                 </tr>
                 <tr>
-                    <th><label for="link_r">Link de redirecionamento após pagamento:</label></th>
-                    <td><input type="text" name="link_r" id="link_r" value="<?php echo esc_attr(get_option('link_r')); ?>" class="regular-text" required></td>
-                </tr>
-                <h1>MTLS Certificates (Seguros)</h1>
-                <tr>
-                    <th><label for="pagstar_crt">Arquivo CRT (.crt):</label></th>
-                    <td><input type="file" name="pagstar_crt" id="pagstar_crt" accept=".crt" class="regular-text"></td>
-                </tr>
-                <tr>
-                    <th><label for="pagstar_key">Arquivo KEY (.key):</label></th>
-                    <td><input type="file" name="pagstar_key" id="pagstar_key" accept=".key" class="regular-text"></td>
+                    <th><label for="link_r" class="required-field">URL de Redirecionamento:</label></th>
+                    <td>
+                        <input type="url" name="link_r" id="link_r" 
+                               value="<?php echo esc_attr(get_option('link_r')); ?>" 
+                               class="regular-text" required>
+                        <span class="help-text">URL para onde o cliente será redirecionado após o pagamento</span>
+                    </td>
                 </tr>
             </table>
-            <?php submit_button(); ?>
+
+            <div class="section-title">
+                <h2>Certificados MTLS</h2>
+            </div>
+
+            <table class="form-table">
+                <tr>
+                    <th><label for="pagstar_crt">Certificado CRT:</label></th>
+                    <td>
+                        <input type="file" name="pagstar_crt" id="pagstar_crt" accept=".crt">
+                        <?php if ($crt_exists): ?>
+                            <span class="cert-status cert-valid">Certificado instalado</span>
+                        <?php else: ?>
+                            <span class="cert-status cert-invalid">Certificado não encontrado</span>
+                        <?php endif; ?>
+                        <span class="help-text">Arquivo de certificado (.crt) para autenticação MTLS</span>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="pagstar_key">Chave Privada:</label></th>
+                    <td>
+                        <input type="file" name="pagstar_key" id="pagstar_key" accept=".key">
+                        <?php if ($key_exists): ?>
+                            <span class="cert-status cert-valid">Chave instalada</span>
+                        <?php else: ?>
+                            <span class="cert-status cert-invalid">Chave não encontrada</span>
+                        <?php endif; ?>
+                        <span class="help-text">Arquivo de chave privada (.key) para autenticação MTLS</span>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="section-title">
+                <h2>Configurações Extras</h2>
+            </div>
+
+            <table class="form-table">
+                <tr>
+                    <th><label for="payment_info">Informações de Pagamento:</label></th>
+                    <td>
+                        <textarea name="payment_info" id="payment_info" rows="4" class="regular-text"><?php echo esc_textarea(get_option('pagstar_payment_info', 'Para realizar o pagamento via PIX:
+
+1. Abra o aplicativo do seu banco
+2. Escaneie o QR Code ou copie o código PIX
+3. Confirme os dados e finalize o pagamento
+4. O status do pedido será atualizado automaticamente')); ?></textarea>
+                        <span class="help-text">Informações adicionais que serão exibidas durante o processo de pagamento</span>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="expiration_time">Tempo de Expiração:</label></th>
+                    <td>
+                        <input type="number" name="expiration_time" id="expiration_time" 
+                               value="<?php echo esc_attr(get_option('pagstar_expiration_time', 3600)); ?>" 
+                               min="300" max="86400" step="60" class="regular-text">
+                        <span class="help-text">Tempo em segundos para expiração do QR Code (mínimo: 5 minutos, máximo: 24 horas)</span>
+                    </td>
+                </tr>
+            </table>
+
+            <?php submit_button('Salvar Configurações', 'primary', 'submit', true, array('id' => 'submit-pagstar-settings')); ?>
         </form>
     </div>
     <?php
