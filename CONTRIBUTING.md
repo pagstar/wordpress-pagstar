@@ -1,109 +1,79 @@
-# Guia de Contribuição
+# Diretrizes de Contribuição
 
-Obrigado por seu interesse em contribuir com o Plugin Pagstar! Este documento fornece um conjunto de diretrizes para contribuir com o projeto.
+Obrigado pelo seu interesse em contribuir para o Plugin de Pagamento PIX Pagstar para WooCommerce! Este documento fornece um conjunto de diretrizes para contribuir com o projeto.
 
 ## Como Contribuir
 
-1. **Reportando Problemas**
-   - Use o sistema de issues do GitHub
-   - Inclua versão do plugin, WordPress e WooCommerce
-   - Descreva o problema de forma clara e detalhada
-   - Inclua logs de erro quando relevante
-
-2. **Sugerindo Melhorias**
-   - Descreva a melhoria proposta
-   - Explique o benefício da mudança
-   - Forneça exemplos de uso quando possível
-
-3. **Enviando Pull Requests**
-   - Crie uma branch para sua feature/fix
-   - Siga as convenções de código
-   - Inclua testes quando possível
-   - Atualize a documentação
-   - Descreva as mudanças no PR
+1. Faça um fork do repositório
+2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
+3. Faça commit das suas alterações (`git commit -m 'feat: adiciona nova feature'`)
+4. Faça push para a branch (`git push origin feature/nova-feature`)
+5. Abra um Pull Request
 
 ## Padrões de Código
 
-### PHP
-- Siga as [PSR-12](https://www.php-fig.org/psr/psr-12/)
-- Use type hints quando possível
-- Documente funções e classes
-- Mantenha funções pequenas e focadas
+- Siga os padrões de codificação do WordPress
+- Use indentação com tabs
+- Comente seu código quando necessário
+- Mantenha as funções pequenas e focadas
+- Use nomes descritivos para variáveis e funções
 
-### JavaScript
-- Use ES6+ quando possível
-- Siga as convenções do WordPress
-- Documente funções complexas
-- Use JSDoc para documentação
+## Mensagens de Commit
 
-### CSS
-- Use BEM para nomenclatura
-- Mantenha especificidade baixa
-- Use variáveis CSS quando possível
-- Documente classes complexas
+Use o formato convencional de commits:
 
-## Ambiente de Desenvolvimento
+- `feat`: Nova feature
+- `fix`: Correção de bug
+- `docs`: Alterações na documentação
+- `style`: Formatação, ponto e vírgula, etc; sem mudança de código
+- `refactor`: Refatoração de código
+- `test`: Adicionando testes
+- `chore`: Atualização de tarefas, configuração, etc; sem mudança de código
 
-1. **Requisitos**
-   - PHP 7.4+
-   - WordPress 5.6+
-   - WooCommerce 5.0+
-   - Node.js (para desenvolvimento)
-   - Composer (para dependências PHP)
+Exemplo:
+```
+feat: adiciona suporte a notificações toast
+fix: corrige validação de CPF
+docs: atualiza README com novas instruções
+```
 
-2. **Configuração**
-   ```bash
-   # Clone o repositório
-   git clone https://github.com/pagstar/wordpress-pagstar.git
-   
-   # Instale dependências
-   composer install
-   npm install
-   
-   # Configure o ambiente
-   cp .env.example .env
-   ```
+## Testes
 
-3. **Testes**
-   - Execute testes PHP: `composer test`
-   - Execute testes JavaScript: `npm test`
-   - Verifique padrões de código: `composer lint`
+- Adicione testes para novas funcionalidades
+- Certifique-se de que todos os testes passam antes de enviar um PR
+- Mantenha a cobertura de testes alta
 
-## Processo de Revisão
+## Documentação
 
-1. **Submissão**
-   - Crie uma branch descritiva
-   - Faça commits atômicos
-   - Escreva mensagens claras
-   - Atualize o CHANGELOG.md
+- Atualize a documentação para refletir suas alterações
+- Mantenha o README.md atualizado
+- Adicione comentários PHPDoc para novas funções
+- Atualize o CHANGELOG.md com suas mudanças
 
-2. **Revisão**
-   - PRs serão revisados por mantenedores
-   - Feedback será fornecido em até 48h
-   - Correções podem ser solicitadas
-   - Discussões são bem-vindas
+## Pull Requests
 
-3. **Aprovação**
-   - PRs precisam de 2 aprovações
-   - Todos os testes devem passar
-   - Documentação deve estar atualizada
-   - Código deve seguir padrões
+- Descreva claramente as mudanças no PR
+- Inclua screenshots quando relevante
+- Referencie issues relacionadas
+- Certifique-se de que o PR está atualizado com a branch principal
 
-## Código de Conduta
+## Issues
 
-- Seja respeitoso
-- Mantenha discussões construtivas
-- Respeite diferentes pontos de vista
-- Ajude outros contribuidores
-- Siga as diretrizes da comunidade
+- Use o template de issue apropriado
+- Forneça informações detalhadas sobre o problema
+- Inclua passos para reproduzir o problema
+- Adicione screenshots quando relevante
 
-## Suporte
+## Segurança
 
-Para dúvidas sobre contribuição:
-- Issues do GitHub
-- Comunidade no Discord
-- Email: tecnologia@pagstar.com
+- Reporte vulnerabilidades de segurança em privado
+- Não inclua credenciais ou dados sensíveis no código
+- Siga as melhores práticas de segurança do WordPress
 
-## Agradecimentos
+## Licença
 
-Obrigado por contribuir para o crescimento do Plugin Pagstar! 
+Ao contribuir, você concorda que suas contribuições serão licenciadas sob a Licença de Software Livre Pagstar.
+
+## Contato
+
+Para dúvidas ou sugestões, entre em contato através do email: suporte@pagstar.com 

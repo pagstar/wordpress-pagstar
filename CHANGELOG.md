@@ -1,14 +1,3 @@
-## [1.0.2] - 2025-04-30
-
-### Adicionado
-- 
-
-### Melhorado
-- 
-
-### Corrigido
-- 
-
 # Changelog
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
@@ -16,17 +5,29 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
-## [1.0.3] - 2024-03-21
+## [1.0.2] - 2024-04-30
 
 ### Added
+- Toast notifications for better user feedback
+- Company name and email fields in settings form
+- Improved form validation and error handling
 - Arquivo `pagstar-api.php` para centralizar as requisições à API
 - Métodos para gerenciar token de acesso, cobranças e webhook
 - Documentação PHPDoc para todos os métodos da API
 
 ### Improved
+- Settings form layout and organization
+- Visual feedback for form submissions
+- Toast notification positioning and timing
+- Variable naming consistency
 - Organização do código com separação de responsabilidades
 - Tratamento de erros nas requisições à API
 - Reutilização de código para requisições HTTP
+
+### Fixed
+- Settings persistence issues
+- Form field validation
+- Toast notification display time
 
 ## [1.0.2] - 2024-03-21
 

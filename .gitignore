@@ -1,3 +1,8 @@
+# Arquivos do WordPress
+wp-config.php
+wp-content/
+wp-includes/
+
 # Arquivos do sistema
 .DS_Store
 Thumbs.db
@@ -5,27 +10,10 @@ Thumbs.db
 *.swo
 *~
 
-# Diretórios do WordPress
-wp-content/cache/
-wp-content/upgrade/
-wp-content/backup*/
-wp-content/backup-*/
-wp-content/backups/
-wp-content/plugins/hello.php
-wp-content/plugins/akismet/
-
-# Logs e arquivos de debug
-*.log
-debug.log
-error_log
-php_error.log
-
 # Arquivos de ambiente
 .env
 .env.*
 !.env.example
-config.local.php
-wp-config-local.php
 
 # Arquivos de IDE
 .idea/
@@ -33,37 +21,57 @@ wp-config-local.php
 *.sublime-project
 *.sublime-workspace
 
-# Arquivos de build e dependências
+# Arquivos de build
 node_modules/
 vendor/
 composer.lock
 package-lock.json
 yarn.lock
 
-# Arquivos de certificados
-certificados_pagstar/
-*.crt
-*.key
-*.pem
-
-# Arquivos temporários
-tmp/
-temp/
-*.tmp
-*.temp
+# Arquivos de log
+*.log
+logs/
+error_log
 
 # Arquivos de backup
 *.bak
 *.backup
 *.old
 *.orig
+*.rej
+
+# Arquivos de certificados
+*.crt
+*.key
+*.pem
 
 # Arquivos de cache
+cache/
 *.cache
-.cache/
 wp-content/cache/
+wp-content/advanced-cache.php
+wp-content/object-cache.php
+
+# Arquivos de upload
+wp-content/uploads/
 wp-content/upgrade/
 
-# Arquivos de mídia temporários
-wp-content/uploads/temp/
-wp-content/uploads/cache/
+# Arquivos de debug
+debug.log
+wp-content/debug.log
+
+# Arquivos de teste
+*.test.php
+tests/
+test/
+wp-content/tests/
+wp-content/test/
+
+# Arquivos de documentação
+docs/
+documentation/
+*.md
+!README.md
+!CHANGELOG.md
+!CONTRIBUTING.md
+!LICENSE
