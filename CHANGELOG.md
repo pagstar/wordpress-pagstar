@@ -1,9 +1,24 @@
 # Changelog
 
-Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
+Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
-e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
+e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
+
+## [1.0.1] - 2024-03-20
+
+### Adicionado
+- Melhorias na detecção de versão do plugin
+- Atualização automática do CHANGELOG.md
+- Criação automática de releases no GitHub
+
+### Melhorado
+- Processo de atualização de versão
+- Logs do GitHub Action
+
+### Corrigido
+- Problemas com permissões no GitHub Action
+- Comandos de push e commit no workflow
 
 ## [1.0.0] - 2024-03-20
 
