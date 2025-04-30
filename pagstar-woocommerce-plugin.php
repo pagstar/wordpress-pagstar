@@ -149,40 +149,48 @@ add_action('admin_menu', 'pagstar_admin_menu');
 // Página de configurações do Pagstar
 function pagstar_settings_page()
 {
-    // Verificar permissões de acesso
     if (!current_user_can('manage_options')) {
         return;
     }
 
-    // Salvar as configurações quando o formulário é enviado
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         update_option('client_id', sanitize_text_field($_POST['client_id']));
         update_option('client_secret', sanitize_text_field($_POST['client_secret']));
         update_option('pix_key', sanitize_text_field($_POST['pix_key']));
-        update_option('pagstar_crt', sanitize_text_field($_POST['pagstar_crt']));
-        update_option('pagstar_key', sanitize_text_field($_POST['pagstar_key']));
         update_option('pagstar_user_agent', sanitize_text_field($_POST['user_agent']));
-		update_option('link_r', sanitize_text_field($_POST['link_r']));
-		update_option('pagstar_mode', 'production');
-		
-		
+        update_option('link_r', sanitize_text_field($_POST['link_r']));
+        update_option('pagstar_mode', 'production');
+
+        // Upload dos arquivos .crt e .key
+        $upload_dir = wp_upload_dir()['basedir'] . '/pagstar_certificados/';
+        $upload_url = wp_upload_dir()['baseurl'] . '/pagstar_certificados/';
+
+        if (!file_exists($upload_dir)) {
+            wp_mkdir_p($upload_dir);
+        }
+
+        if (!empty($_FILES['pagstar_crt']['tmp_name'])) {
+            $crt_path = $upload_dir . 'certificado.crt';
+            move_uploaded_file($_FILES['pagstar_crt']['tmp_name'], $crt_path);
+            update_option('pagstar_crt', $crt_path);
+        }
+
+        if (!empty($_FILES['pagstar_key']['tmp_name'])) {
+            $key_path = $upload_dir . 'chave.key';
+            move_uploaded_file($_FILES['pagstar_key']['tmp_name'], $key_path);
+            update_option('pagstar_key', $key_path);
+        }
+
         echo '<div class="notice notice-success"><p>Configurações salvas com sucesso!</p></div>';
     }
 
     // Renderizar o formulário
     ?>
-   <div class="wrap">
+
+    <div class="wrap">
         <h1>Pagstar Settings</h1>
-        <form method="post" action="">
+        <form method="post" action="" enctype="multipart/form-data">
             <table class="form-table">
-              <!-- Campo de seleção para o modo de operação -->
-                <!-- Campo para a URL da API de sandbox 
-                <tr>
-                    <th><label for="pagstar_sandbox_url">URL da API de Sandbox:</label></th>
-                    <td>
-                        <input type="text" name="pagstar_sandbox_url" id="pagstar_sandbox_url" value="<?php echo esc_attr(get_option('pagstar_sandbox_url')); ?>" class="regular-text">
-                    </td>
-                </tr>-->
                 <tr>
                     <th><label for="client_id">Client ID:</label></th>
                     <td>
@@ -207,25 +215,23 @@ function pagstar_settings_page()
                         <input type="text" name="user_agent" id="user_agent" value="<?php echo esc_attr(get_option('pagstar_user_agent')); ?>" class="regular-text" required>
                     </td>
                 </tr>
-                
-                
-                 <tr>
-                    <th><label for="user_agent">Link de redirecionamento após pagamento feito</label></th>
+                <tr>
+                    <th><label for="link_r">Link de redirecionamento após pagamento feito</label></th>
                     <td>
-                        <input type="text" name="link_r" id="user_agent" value="<?php echo esc_attr(get_option('link_r')); ?>" class="regular-text" required>
+                        <input type="text" name="link_r" id="link_r" value="<?php echo esc_attr(get_option('link_r')); ?>" class="regular-text" required>
                     </td>
                 </tr>
                 <h1>MTLS certificates provided by Pagstar</h1>
                 <tr>
-                    <th><label for="pagstar_crt">Certificate CRT:</label></th>
+                    <th><label for="pagstar_crt">Certificate CRT (.crt):</label></th>
                     <td>
-                        <input type="text" name="pagstar_crt" id="pagstar_crt" value="<?php echo esc_attr(get_option('pagstar_crt')); ?>" class="regular-text" required>
+                        <input type="file" name="pagstar_crt" id="pagstar_crt" accept=".crt" class="regular-text">
                     </td>
                 </tr>
                 <tr>
-                    <th><label for="pagstar_key">Certificate KEY:</label></th>
+                    <th><label for="pagstar_key">Certificate KEY (.key):</label></th>
                     <td>
-                        <input type="text" name="pagstar_key" id="pagstar_key" value="<?php echo esc_attr(get_option('pagstar_key')); ?>" class="regular-text" required>
+                        <input type="file" name="pagstar_key" id="pagstar_key" accept=".key" class="regular-text">
                     </td>
                 </tr>
             </table>
