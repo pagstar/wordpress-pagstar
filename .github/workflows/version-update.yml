@@ -24,6 +24,7 @@ jobs:
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
+          git config --global --add safe.directory /github/workspace
 
       - name: Verificar alterações na versão
         id: version
@@ -31,11 +32,16 @@ jobs:
           OLD_VERSION=$(grep "Version:" pagstar-woocommerce-plugin.php | sed 's/Version: //')
           NEW_VERSION=$(git show HEAD:pagstar-woocommerce-plugin.php | grep "Version:" | sed 's/Version: //')
           
+          echo "Old Version: $OLD_VERSION"
+          echo "New Version: $NEW_VERSION"
+          
           if [ "$OLD_VERSION" != "$NEW_VERSION" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
             echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "Version change detected!"
           else
             echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No version change detected"
           fi
 
       - name: Atualizar CHANGELOG
@@ -43,6 +49,8 @@ jobs:
         run: |
           CURRENT_DATE=$(date +"%Y-%m-%d")
           NEW_VERSION=${{ steps.version.outputs.new_version }}
+          
+          echo "Updating CHANGELOG for version $NEW_VERSION"
           
           echo "## [$NEW_VERSION] - $CURRENT_DATE" > temp_changelog.md
           echo "" >> temp_changelog.md
@@ -59,9 +67,13 @@ jobs:
           cat CHANGELOG.md >> temp_changelog.md
           mv temp_changelog.md CHANGELOG.md
           
+          echo "CHANGELOG updated. Committing changes..."
+          
           git add CHANGELOG.md
           git commit -m "docs: update CHANGELOG for version $NEW_VERSION"
-          git push origin main
+          
+          echo "Pushing changes to main branch..."
+          git push origin HEAD:main
 
       - name: Criar Release
         if: steps.version.outputs.changed == 'true'
@@ -71,5 +83,7 @@ jobs:
           tag_name: "v${{ steps.version.outputs.new_version }}"
           body: "New version of Pagstar plugin"
           generate_release_notes: true
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
