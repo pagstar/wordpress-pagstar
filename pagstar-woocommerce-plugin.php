@@ -1,11 +1,15 @@
 <?php
 /**
- * Plugin Name: Plugin de pix Pagstar
- * Description: Plugin pix para WooCommerce usando a API Pagstar.
+ * Plugin Name: Pagstar
+ * Plugin URI: https://pagstar.com.br
+ * Description: Plugin de integração com a Pagstar para WordPress
  * Version: 1.0.2
  * Author: Pagstar
- * Plugin URI: https://pagstar.com/
- * Text Domain: plugin-pagstar
+ * Author URI: https://pagstar.com.br
+ * License: Licença de Software Livre Pagstar
+ * License URI: https://pagstar.com.br/licenca
+ * Text Domain: pagstar
+ * Domain Path: /languages
  */
 
 // Verificar se o WooCommerce está ativo
