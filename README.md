@@ -1,5 +1,10 @@
 # Plugin de Pix Pagstar para WooCommerce
 
+[![WordPress](https://img.shields.io/badge/WordPress-%23117AC9.svg?style=for-the-badge&logo=WordPress&logoColor=white)](https://wordpress.org/)
+[![WooCommerce](https://img.shields.io/badge/WooCommerce-%23965A3E.svg?style=for-the-badge&logo=WooCommerce&logoColor=white)](https://woocommerce.com/)
+[![PHP](https://img.shields.io/badge/PHP-%23777BB4.svg?style=for-the-badge&logo=php&logoColor=white)](https://php.net/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+
 ## Introdução
 
 O Plugin de Pix Pagstar é uma extensão para o WooCommerce que permite oferecer pagamentos por Pix em sua loja virtual, utilizando a API da Pagstar. Com este plugin, seus clientes poderão realizar pagamentos de forma rápida e segura, e você poderá gerenciar os pagamentos e transações de forma eficiente.
@@ -126,6 +131,36 @@ O plugin implementa várias medidas de segurança:
 * Autenticação MTLS em todas as requisições à API
 * Cache seguro de tokens de acesso
 
-## Suporte e Documentação
+## Colaboradores
 
-Para mais informações e suporte técnico, acesse a [página oficial do Plugin de Pix Pagstar](https://pagstar.com/plugin).
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/kleberandrade">
+        <img src="https://github.com/kleberandrade.png" width="100px;" alt="Kleber Andrade"/>
+        <br />
+        <sub><b>Kleber Andrade</b></sub>
+        <br />
+        <sub>Desenvolvedor</sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/WillBorgesDev">
+        <img src="https://github.com/WillBorgesDev.png" width="100px;" alt="Will Borges"/>
+        <br />
+        <sub><b>Will Borges</b></sub>
+        <br />
+        <sub>Desenvolvedor</sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/pagstar">
+        <img src="https://github.com/pagstar.png" width="100px;" alt="Equipe Pagstar"/>
+        <br />
+        <sub><b>Equipe Pagstar</b></sub>
+        <br />
+        <sub>Mantenedores</sub>
+      </a>
+    </td>
+  </tr>
+</table>
