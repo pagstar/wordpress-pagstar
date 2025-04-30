@@ -636,6 +636,7 @@ function pagstar_settings_page()
 
             if ($response->code !== 200) {
                 $errors[] = 'Erro na requisição com o sistema bancario, credenciais ou certificados invalidos';
+                $errors[] = $response->code;
                 $success = false;
             }
 
