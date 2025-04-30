@@ -1,3 +1,14 @@
+## [1.0.3] - 2025-04-30
+
+### Adicionado
+- 
+
+### Melhorado
+- 
+
+### Corrigido
+- 
+
 # Changelog
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
