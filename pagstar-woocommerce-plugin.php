@@ -296,6 +296,112 @@ function pagstar_settings_page()
         wp_die(__('Você não tem permissão para acessar esta página.', 'plugin-pagstar'));
     }
 
+    // Adicionar estilos CSS
+    ?>
+    <style>
+        .pagstar-settings {
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        .pagstar-settings .form-table {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .pagstar-settings .form-table th {
+            width: 200px;
+            padding: 15px 10px;
+        }
+        .pagstar-settings .form-table td {
+            padding: 15px 10px;
+        }
+        .pagstar-settings input[type="text"] {
+            width: 100%;
+            max-width: 400px;
+        }
+        .pagstar-settings .section-title {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #2271b1;
+        }
+        .pagstar-settings .cert-status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        .cert-valid {
+            background: #d4edda;
+            color: #155724;
+        }
+        .cert-invalid {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .pagstar-settings .cert-info {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #666;
+        }
+        .pagstar-settings .help-text {
+            color: #666;
+            font-style: italic;
+            margin-top: 5px;
+            display: block;
+        }
+        .pagstar-settings .required-field::after {
+            content: "*";
+            color: #dc3545;
+            margin-left: 4px;
+        }
+        /* Estilos do Toast/Snackbar */
+        .pagstar-toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1;
+            right: 30px;
+            top: 30px;
+            font-size: 17px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .pagstar-toast.success {
+            background-color: #4CAF50;
+        }
+        .pagstar-toast.error {
+            background-color: #f44336;
+        }
+        .pagstar-toast.show {
+            visibility: visible;
+            -webkit-animation: fadein 0.5s, fadeout 0.5s 4.5s;
+            animation: fadein 0.5s, fadeout 0.5s 4.5s;
+        }
+        @-webkit-keyframes fadein {
+            from {top: 0; opacity: 0;} 
+            to {top: 30px; opacity: 1;}
+        }
+        @keyframes fadein {
+            from {top: 0; opacity: 0;}
+            to {top: 30px; opacity: 1;}
+        }
+        @-webkit-keyframes fadeout {
+            from {top: 30px; opacity: 1;} 
+            to {top: 0; opacity: 0;}
+        }
+        @keyframes fadeout {
+            from {top: 30px; opacity: 1;}
+            to {top: 0; opacity: 0;}
+        }
+    </style>
+    <?php
+
     // Verificar status dos certificados
     $crt_path = get_option('pagstar_crt');
     $key_path = get_option('pagstar_key');
