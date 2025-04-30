@@ -33,8 +33,8 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     $this->id = 'pagstar';
     $this->icon = apply_filters('woocommerce_pagstar_icon', plugins_url('pagstar_icon.png', __FILE__));
     $this->has_fields = false;
-    $this->method_title = __('Pagstar', 'pagstar');
-    $this->method_description = __('Aceite pagamentos via PIX através da Pagstar.', 'pagstar');
+    $this->method_title = 'Pagstar';
+    $this->method_description = 'Aceite pagamentos via PIX com a Pagstar';
     $this->supports = array(
       'products',
       'refunds',
@@ -71,52 +71,84 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     add_action('woocommerce_receipt_' . $this->id, array($this, 'receipt_page'));
     add_action('template_redirect', array($this, 'callback_handler'));
     add_action('woocommerce_admin_order_data_after_billing_address', array($this, 'display_admin_order_meta'), 10, 1);
+    add_action('woocommerce_email_before_order_table', array($this, 'email_instructions'), 10, 3);
+    add_action('admin_enqueue_scripts', array($this, 'admin_scripts'));
   }
 
   public function init_form_fields()
   {
     $this->form_fields = array(
       'enabled' => array(
-        'title' => __('Ativar/Desativar', 'pagstar'),
+        'title' => __('Ativar Pagamento via PIX', 'pagstar'),
         'type' => 'checkbox',
-        'label' => __('Ativar Pagamento via PIX', 'pagstar'),
-        'default' => 'yes',
-        'description' => __('Habilite ou desabilite o método de pagamento PIX da Pagstar.', 'pagstar'),
-        'desc_tip' => true,
+        'label' => __('Ativar Pagstar', 'pagstar'),
+        'default' => 'no',
+        'description' => __('Ative para permitir pagamentos via PIX', 'pagstar')
       ),
       'title' => array(
         'title' => __('Título', 'pagstar'),
         'type' => 'text',
-        'description' => __('Título que o cliente verá durante o checkout.', 'pagstar'),
-        'default' => __('PIX (Pagstar)', 'pagstar'),
+        'description' => __('Título que o cliente verá durante o checkout', 'pagstar'),
+        'default' => __('PIX', 'pagstar'),
         'desc_tip' => true,
-        'class' => 'input-text regular-input',
       ),
       'description' => array(
         'title' => __('Descrição', 'pagstar'),
         'type' => 'textarea',
-        'description' => __('Descrição do método de pagamento que o cliente verá durante o checkout.', 'pagstar'),
-        'default' => __('Pague com PIX de forma rápida e segura através da Pagstar.', 'pagstar'),
+        'description' => __('Descrição que o cliente verá durante o checkout', 'pagstar'),
+        'default' => __('Pague com PIX de forma rápida e segura', 'pagstar'),
         'desc_tip' => true,
-        'css' => 'width: 400px; height: 75px;',
       ),
       'instructions' => array(
         'title' => __('Instruções', 'pagstar'),
         'type' => 'textarea',
-        'description' => __('Instruções que serão adicionadas à página de agradecimento e e-mails.', 'pagstar'),
-        'default' => __('Após o pagamento, seu pedido será processado automaticamente.', 'pagstar'),
+        'description' => __('Instruções que serão adicionadas à página de agradecimento e e-mails', 'pagstar'),
+        'default' => __('Para realizar o pagamento via PIX, escaneie o QR Code ou copie o código PIX.', 'pagstar'),
         'desc_tip' => true,
-        'css' => 'width: 400px; height: 75px;',
-      ),
-      'icon' => array(
-        'title' => __('Ícone', 'pagstar'),
-        'type' => 'text',
-        'description' => __('URL do ícone que será exibido durante o checkout.', 'pagstar'),
-        'default' => plugins_url('pagstar_icon.png', __FILE__),
-        'desc_tip' => true,
-        'class' => 'input-text regular-input',
-      ),
+      )
     );
+  }
+
+  public function process_admin_options()
+  {
+    $saved = parent::process_admin_options();
+    
+    if ($saved) {
+      // Forçar atualização do status
+      $enabled = $this->get_option('enabled');
+      update_option('woocommerce_pagstar_settings', array('enabled' => $enabled));
+      
+      // Limpar cache do WooCommerce
+      if (function_exists('wc_get_container')) {
+        wc_get_container()->get(\Automattic\WooCommerce\Caching\Cache::class)->flush();
+      }
+
+      // Forçar atualização da página
+      wp_send_json_success(array(
+        'enabled' => $enabled,
+        'message' => 'Status atualizado com sucesso'
+      ));
+    }
+    
+    return $saved;
+  }
+
+  public function is_available()
+  {
+    $is_available = parent::is_available();
+    
+    if ($is_available) {
+      // Verificar se as credenciais estão configuradas
+      $client_id = get_option('pagstar_client_id');
+      $client_secret = get_option('pagstar_client_secret');
+      $pix_key = get_option('pagstar_pix_key');
+      
+      if (empty($client_id) || empty($client_secret) || empty($pix_key)) {
+        $is_available = false;
+      }
+    }
+    
+    return $is_available;
   }
 
   public function process_payment($order_id)
@@ -350,6 +382,26 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       echo '<h4>' . __('Informações do Pagamento', 'pagstar') . '</h4>';
       echo '<p><strong>' . __('ID da Transação:', 'pagstar') . '</strong> ' . $transaction_id . '</p>';
       echo '</div>';
+    }
+  }
+
+  public function email_instructions($order, $sent_to_admin, $plain_text)
+  {
+    if ($this->id === $order->get_payment_method()) {
+      $instructions = $this->get_option('instructions');
+      if ($instructions) {
+        echo wp_kses_post(wpautop(wptexturize($instructions)));
+      }
+    }
+  }
+
+  public function admin_scripts() {
+    if (isset($_GET['section']) && $_GET['section'] === 'pagstar') {
+      wp_enqueue_script('pagstar-admin', plugins_url('assets/js/admin.js', dirname(__FILE__)), array('jquery'), '1.0.0', true);
+      wp_localize_script('pagstar-admin', 'pagstar_admin', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('pagstar_update_gateway_status')
+      ));
     }
   }
 }

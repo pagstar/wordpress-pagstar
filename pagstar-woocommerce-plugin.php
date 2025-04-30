@@ -373,7 +373,8 @@ function pagstar_settings_page()
         /* Estilos do Toast/Snackbar moderno */
         .pagstar-toast {
             visibility: hidden;
-            min-width: 300px;
+            min-width: 350px;
+            max-width: 450px;
             background-color: #fff;
             color: #333;
             text-align: left;
@@ -382,13 +383,25 @@ function pagstar_settings_page()
             position: fixed;
             z-index: 9999;
             right: 30px;
-            top: 30px;
+            top: 80px;
             font-size: 14px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             border-left: 4px solid #2271b1;
             display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 20px;
+        }
+        .pagstar-toast .toast-header {
+            display: flex;
             align-items: center;
             gap: 12px;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .pagstar-toast .toast-body {
+            color: #666;
+            line-height: 1.4;
         }
         .pagstar-toast.success {
             border-left-color: #4CAF50;
@@ -396,18 +409,32 @@ function pagstar_settings_page()
         .pagstar-toast.error {
             border-left-color: #f44336;
         }
+        .pagstar-toast.warning {
+            border-left-color: #ff9800;
+        }
+        .pagstar-toast.info {
+            border-left-color: #2196F3;
+        }
         .pagstar-toast.show {
             visibility: visible;
             animation: slideIn 0.3s ease-out, fadeOut 0.3s ease-in 4.5s;
         }
         .pagstar-toast .icon {
             font-size: 20px;
+            width: 20px;
+            height: 20px;
         }
         .pagstar-toast.success .icon {
             color: #4CAF50;
         }
         .pagstar-toast.error .icon {
             color: #f44336;
+        }
+        .pagstar-toast.warning .icon {
+            color: #ff9800;
+        }
+        .pagstar-toast.info .icon {
+            color: #2196F3;
         }
         @keyframes slideIn {
             from {
@@ -418,6 +445,10 @@ function pagstar_settings_page()
                 transform: translateX(0);
                 opacity: 1;
             }
+        }
+        .pagstar-toast.show {
+            visibility: visible;
+            animation: slideIn 0.3s ease-out, fadeOut 0.3s ease-in 4.5s;
         }
         @keyframes fadeOut {
             from {
@@ -440,6 +471,16 @@ function pagstar_settings_page()
         .pagstar-settings .form-table .checkbox input[type="checkbox"] {
             margin: 0;
         }
+
+        /* Adicionei media query para responsividade */
+        @media screen and (max-width: 782px) {
+            .pagstar-toast {
+                right: 20px;
+                top: 60px;
+                min-width: 300px;
+                max-width: calc(100% - 40px);
+            }
+        }
     </style>
 
     <script>
@@ -458,10 +499,29 @@ function pagstar_settings_page()
         });
 
         // Melhorar o toast
-        function showToast(message, type) {
+        function showToast(title, message, type) {
+            var icon = '';
+            switch(type) {
+                case 'success':
+                    icon = 'dashicons-yes-alt';
+                    break;
+                case 'error':
+                    icon = 'dashicons-warning';
+                    break;
+                case 'warning':
+                    icon = 'dashicons-info';
+                    break;
+                case 'info':
+                    icon = 'dashicons-info';
+                    break;
+            }
+
             var toast = $('<div class="pagstar-toast ' + type + '">' +
-                '<span class="dashicons icon"></span>' +
-                '<span class="message">' + message + '</span>' +
+                '<div class="toast-header">' +
+                '<span class="dashicons ' + icon + ' icon"></span>' +
+                '<span class="title">' + title + '</span>' +
+                '</div>' +
+                '<div class="toast-body">' + message + '</div>' +
                 '</div>');
             
             $('body').append(toast);
@@ -488,14 +548,14 @@ function pagstar_settings_page()
                 },
                 success: function(response) {
                     if (response.success) {
-                        showToast('Status atualizado com sucesso', 'success');
+                        showToast('Sucesso', 'Status atualizado com sucesso', 'success');
                     } else {
-                        showToast('Erro ao atualizar status', 'error');
+                        showToast('Erro', 'Erro ao atualizar status', 'error');
                         checkbox.prop('checked', !checkbox.is(':checked'));
                     }
                 },
                 error: function() {
-                    showToast('Erro ao atualizar status', 'error');
+                    showToast('Erro', 'Erro ao atualizar status', 'error');
                     checkbox.prop('checked', !checkbox.is(':checked'));
                 }
             });
