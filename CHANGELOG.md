@@ -5,6 +5,18 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [1.0.3] - 2024-03-21
+
+### Added
+- Arquivo `pagstar-api.php` para centralizar as requisições à API
+- Métodos para gerenciar token de acesso, cobranças e webhook
+- Documentação PHPDoc para todos os métodos da API
+
+### Improved
+- Organização do código com separação de responsabilidades
+- Tratamento de erros nas requisições à API
+- Reutilização de código para requisições HTTP
+
 ## [1.0.2] - 2024-03-21
 
 ### Adicionado

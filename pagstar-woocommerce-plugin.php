@@ -687,3 +687,6 @@ function pagstar_add_version_info() {
 // Adiciona o hook para exibir a versão na página de configurações
 add_action('pagstar_settings_before_form', 'pagstar_add_version_info');
 
+require_once(__DIR__ . '/utils.php');
+require_once(__DIR__ . '/pagstar-api.php');
+

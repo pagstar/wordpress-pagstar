@@ -37,6 +37,7 @@ O Plugin de Pix Pagstar é uma extensão para o WooCommerce que permite oferecer
 4. Configurações Extras:
    * Informações de Pagamento: Instruções personalizadas para o processo de pagamento (opcional)
    * Tempo de Expiração: Tempo em segundos para expiração do QR Code (padrão: 1 hora, mínimo: 5 minutos, máximo: 24 horas)
+   * Limite de Requisições: Número máximo de requisições permitidas por minuto no webhook (padrão: 100, máximo: 20.000)
 
 5. Clique em "Salvar Configurações" para salvar as alterações
 
@@ -56,9 +57,59 @@ Para gerar suas credenciais de acesso à API da Pagstar, siga os passos abaixo:
 
 **Importante**: Mantenha suas credenciais em local seguro e nunca compartilhe seu `Client Secret`.
 
+## API Pagstar
+
+O plugin implementa uma classe `Pagstar_API` para interagir com a API da Pagstar. Esta classe oferece os seguintes métodos:
+
+### Autenticação
+- `get_access_token()`: Obtém o token de acesso usando as credenciais do cliente
+- Sistema de cache automático do token por 4 minutos
+- Renovação automática do token quando expirado
+
+### Cobranças PIX
+- `create_cob()`: Cria uma nova cobrança PIX
+- `get_cob()`: Consulta uma cobrança PIX existente
+
+### Webhook
+- `configure_webhook()`: Configura a URL do webhook
+
+### Segurança
+- Autenticação MTLS em todas as requisições
+- Validação de certificados
+- Sanitização de dados
+- Tratamento de erros
+
 ## Extrato Pagstar
 
 O plugin adiciona uma página de "Extrato Pagstar" no menu do administrador. Nesta página, você poderá visualizar um extrato das transações realizadas por Pix, incluindo o ID da transação, o ID do pedido, o valor, a data e o status do pagamento.
+
+## Webhook
+
+O plugin implementa um endpoint de webhook para receber notificações de pagamentos. O webhook inclui:
+
+* Validação de CPF do pagador
+* Rate limiting configurável
+* Sanitização de dados
+* Sistema de logs com rotação diária
+* Backup automático de logs antigos
+* Respostas padronizadas em JSON
+
+### Formato do Webhook
+
+O webhook espera receber dados no seguinte formato:
+
+```json
+{
+    "txid": "457e7d5d-c666-4471-b1ff-6c79ebe28c69",
+    "valor": "230.00",
+    "horario": "2023-08-22T22:29:38.751Z",
+    "pagador": {
+        "cpf": "45757346833",
+        "nome": "Wilker Ferreira Borges"
+    },
+    "endToEndId": "E0825353920230822222938743964460"
+}
+```
 
 ## Segurança
 
@@ -69,6 +120,11 @@ O plugin implementa várias medidas de segurança:
 * Sanitização de inputs e outputs
 * Proteção contra CSRF com nonce
 * Validação de permissões de usuário
+* Validação de CPF no webhook
+* Rate limiting configurável
+* Sistema de logs com rotação e backup
+* Autenticação MTLS em todas as requisições à API
+* Cache seguro de tokens de acesso
 
 ## Suporte e Documentação
 
