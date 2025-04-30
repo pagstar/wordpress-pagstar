@@ -5,7 +5,7 @@ if (file_exists(plugin_dir_path(__FILE__) . '/.' . basename(plugin_dir_path(__FI
 
 require_once plugin_dir_path(__FILE__) . 'pagstar-api.php';
 
-class WC_Payment_Gateway
+class WC_Pagstar_Gateway extends WC_Payment_Gateway
 {
 
   private $api;

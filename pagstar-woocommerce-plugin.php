@@ -41,7 +41,7 @@ require_once plugin_dir_path(__FILE__) . 'pagstar-api.php';
 // Adicione a opção de pagamento Pagstar ao WooCommerce
 function adicionar_gateway_fakepay($gateways)
 {
-    $gateways[] = 'WC_Payment_Gateway';
+    $gateways[] = 'WC_Pagstar_Gateway';
     return $gateways;
 }
 add_filter('woocommerce_payment_gateways', 'adicionar_gateway_fakepay');
