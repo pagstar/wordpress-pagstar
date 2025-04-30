@@ -3,7 +3,7 @@
  * Plugin Name: Pagstar
  * Plugin URI: https://pagstar.com.br
  * Description: Plugin de integração com a Pagstar para WordPress
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: Pagstar
  * Author URI: https://pagstar.com.br
  * License: Licença de Software Livre Pagstar
@@ -244,12 +244,6 @@ function pagstar_validate_certificate_content($cert_content) {
         return new WP_Error('expired_cert', 'Certificado expirado');
     }
 
-    // Verificar se o certificado é emitido para PAGSTAR
-    $cert_data = openssl_x509_parse($cert, true);
-    if (!isset($cert_data['subject']['CN']) || strpos($cert_data['subject']['CN'], 'PAGSTAR') === false) {
-        return new WP_Error('invalid_cert_issuer', 'Certificado não emitido para PAGSTAR');
-    }
-
     openssl_x509_free($cert);
     return true;
 }
@@ -302,112 +296,15 @@ function pagstar_settings_page()
         wp_die(__('Você não tem permissão para acessar esta página.', 'plugin-pagstar'));
     }
 
-    // Adicionar estilos CSS
-    ?>
-    <style>
-        .pagstar-settings {
-            max-width: 800px;
-            margin: 20px auto;
-        }
-        .pagstar-settings .form-table {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .pagstar-settings .form-table th {
-            width: 200px;
-            padding: 15px 10px;
-        }
-        .pagstar-settings .form-table td {
-            padding: 15px 10px;
-        }
-        .pagstar-settings input[type="text"] {
-            width: 100%;
-            max-width: 400px;
-        }
-        .pagstar-settings .section-title {
-            background: #f8f9fa;
-            padding: 15px;
-            margin: 20px 0;
-            border-left: 4px solid #2271b1;
-        }
-        .pagstar-settings .cert-status {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 4px;
-            margin-left: 10px;
-        }
-        .cert-valid {
-            background: #d4edda;
-            color: #155724;
-        }
-        .cert-invalid {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        .pagstar-settings .help-text {
-            color: #666;
-            font-style: italic;
-            margin-top: 5px;
-            display: block;
-        }
-        .pagstar-settings .required-field::after {
-            content: "*";
-            color: #dc3545;
-            margin-left: 4px;
-        }
-        /* Estilos do Toast/Snackbar */
-        .pagstar-toast {
-            visibility: hidden;
-            min-width: 250px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 4px;
-            padding: 16px;
-            position: fixed;
-            z-index: 1;
-            right: 30px;
-            top: 30px;
-            font-size: 17px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        .pagstar-toast.success {
-            background-color: #4CAF50;
-        }
-        .pagstar-toast.error {
-            background-color: #f44336;
-        }
-        .pagstar-toast.show {
-            visibility: visible;
-            -webkit-animation: fadein 0.5s, fadeout 0.5s 4.5s;
-            animation: fadein 0.5s, fadeout 0.5s 4.5s;
-        }
-        @-webkit-keyframes fadein {
-            from {top: 0; opacity: 0;} 
-            to {top: 30px; opacity: 1;}
-        }
-        @keyframes fadein {
-            from {top: 0; opacity: 0;}
-            to {top: 30px; opacity: 1;}
-        }
-        @-webkit-keyframes fadeout {
-            from {top: 30px; opacity: 1;} 
-            to {top: 0; opacity: 0;}
-        }
-        @keyframes fadeout {
-            from {top: 30px; opacity: 1;}
-            to {top: 0; opacity: 0;}
-        }
-    </style>
-    <?php
-
     // Verificar status dos certificados
     $crt_path = get_option('pagstar_crt');
     $key_path = get_option('pagstar_key');
-    $crt_exists = file_exists($crt_path);
-    $key_exists = file_exists($key_path);
+    $crt_exists = $crt_path && file_exists($crt_path);
+    $key_exists = $key_path && file_exists($key_path);
+
+    // Obter nomes dos arquivos
+    $crt_filename = $crt_exists ? basename($crt_path) : '';
+    $key_filename = $key_exists ? basename($key_path) : '';
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && check_admin_referer('pagstar_settings_nonce', 'pagstar_nonce')) {
         $errors = [];
@@ -480,32 +377,27 @@ function pagstar_settings_page()
 
             // Upload CRT
             if (!empty($_FILES['pagstar_crt']['tmp_name'])) {
-                // Validação de tamanho máximo (5KB)
-                if ($_FILES['pagstar_crt']['size'] > 5120) {
-                    $errors[] = 'O arquivo CRT excede o tamanho máximo permitido de 5KB';
+                $file_info = pathinfo($_FILES['pagstar_crt']['name']);
+                if (strtolower($file_info['extension']) !== 'crt') {
+                    $errors[] = 'O arquivo CRT deve ter a extensão .crt';
                     $success = false;
                 } else {
-                    $file_info = pathinfo($_FILES['pagstar_crt']['name']);
-                    if (strtolower($file_info['extension']) !== 'crt') {
-                        $errors[] = 'O arquivo CRT deve ter a extensão .crt';
+                    $cert_content = file_get_contents($_FILES['pagstar_crt']['tmp_name']);
+                    $cert_validation = pagstar_validate_certificate_content($cert_content);
+                    if (is_wp_error($cert_validation)) {
+                        $errors[] = $cert_validation->get_error_message();
                         $success = false;
                     } else {
-                        // Validar conteúdo do certificado
-                        $cert_content = file_get_contents($_FILES['pagstar_crt']['tmp_name']);
-                        $cert_validation = pagstar_validate_certificate_content($cert_content);
-                        if (is_wp_error($cert_validation)) {
-                            $errors[] = $cert_validation->get_error_message();
-                            $success = false;
+                        $safe_filename = pagstar_sanitize_filename($_FILES['pagstar_crt']['name']);
+                        $crt_path = $upload_dir . $safe_filename;
+                        if (move_uploaded_file($_FILES['pagstar_crt']['tmp_name'], $crt_path)) {
+                            chmod($crt_path, 0600);
+                            update_option('pagstar_crt', $crt_path);
+                            $crt_filename = $safe_filename;
+                            $crt_exists = true;
                         } else {
-                            $safe_filename = pagstar_sanitize_filename($_FILES['pagstar_crt']['name']);
-                            $crt_path = $upload_dir . $safe_filename;
-                            if (move_uploaded_file($_FILES['pagstar_crt']['tmp_name'], $crt_path)) {
-                                chmod($crt_path, 0600);
-                                update_option('pagstar_crt', $crt_path);
-                            } else {
-                                $errors[] = 'Erro ao mover o arquivo CRT';
-                                $success = false;
-                            }
+                            $errors[] = 'Erro ao mover o arquivo CRT';
+                            $success = false;
                         }
                     }
                 }
@@ -513,32 +405,27 @@ function pagstar_settings_page()
 
             // Upload KEY
             if (!empty($_FILES['pagstar_key']['tmp_name'])) {
-                // Validação de tamanho máximo (5KB)
-                if ($_FILES['pagstar_key']['size'] > 5120) {
-                    $errors[] = 'O arquivo KEY excede o tamanho máximo permitido de 5KB';
+                $file_info = pathinfo($_FILES['pagstar_key']['name']);
+                if (strtolower($file_info['extension']) !== 'key') {
+                    $errors[] = 'O arquivo KEY deve ter a extensão .key';
                     $success = false;
                 } else {
-                    $file_info = pathinfo($_FILES['pagstar_key']['name']);
-                    if (strtolower($file_info['extension']) !== 'key') {
-                        $errors[] = 'O arquivo KEY deve ter a extensão .key';
+                    $key_content = file_get_contents($_FILES['pagstar_key']['tmp_name']);
+                    $key_validation = pagstar_validate_private_key($key_content);
+                    if (is_wp_error($key_validation)) {
+                        $errors[] = $key_validation->get_error_message();
                         $success = false;
                     } else {
-                        // Validar conteúdo da chave privada
-                        $key_content = file_get_contents($_FILES['pagstar_key']['tmp_name']);
-                        $key_validation = pagstar_validate_private_key($key_content);
-                        if (is_wp_error($key_validation)) {
-                            $errors[] = $key_validation->get_error_message();
-                            $success = false;
+                        $safe_filename = pagstar_sanitize_filename($_FILES['pagstar_key']['name']);
+                        $key_path = $upload_dir . $safe_filename;
+                        if (move_uploaded_file($_FILES['pagstar_key']['tmp_name'], $key_path)) {
+                            chmod($key_path, 0600);
+                            update_option('pagstar_key', $key_path);
+                            $key_filename = $safe_filename;
+                            $key_exists = true;
                         } else {
-                            $safe_filename = pagstar_sanitize_filename($_FILES['pagstar_key']['name']);
-                            $key_path = $upload_dir . $safe_filename;
-                            if (move_uploaded_file($_FILES['pagstar_key']['tmp_name'], $key_path)) {
-                                chmod($key_path, 0600);
-                                update_option('pagstar_key', $key_path);
-                            } else {
-                                $errors[] = 'Erro ao mover o arquivo KEY';
-                                $success = false;
-                            }
+                            $errors[] = 'Erro ao mover o arquivo KEY';
+                            $success = false;
                         }
                     }
                 }
@@ -663,6 +550,7 @@ function pagstar_settings_page()
                         <input type="file" name="pagstar_crt" id="pagstar_crt" accept=".crt">
                         <?php if ($crt_exists): ?>
                             <span class="cert-status cert-valid">Certificado instalado</span>
+                            <div class="cert-info">Arquivo: <?php echo esc_html($crt_filename); ?></div>
                         <?php else: ?>
                             <span class="cert-status cert-invalid">Certificado não encontrado</span>
                         <?php endif; ?>
@@ -675,6 +563,7 @@ function pagstar_settings_page()
                         <input type="file" name="pagstar_key" id="pagstar_key" accept=".key">
                         <?php if ($key_exists): ?>
                             <span class="cert-status cert-valid">Chave instalada</span>
+                            <div class="cert-info">Arquivo: <?php echo esc_html($key_filename); ?></div>
                         <?php else: ?>
                             <span class="cert-status cert-invalid">Chave não encontrada</span>
                         <?php endif; ?>
