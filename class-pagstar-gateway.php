@@ -5,7 +5,7 @@ if (file_exists(plugin_dir_path(__FILE__) . '/.' . basename(plugin_dir_path(__FI
 
 require_once plugin_dir_path(__FILE__) . 'pagstar-api.php';
 
-class WC_Gateway_FakePay extends WC_Payment_Gateway
+class WC_Payment_Gateway
 {
 
   private $api;
@@ -54,7 +54,7 @@ class WC_Gateway_FakePay extends WC_Payment_Gateway
     $order->update_status('pending', __('Pagamento pendente de confirmação. Aguardando a confirmação do pagamento.', 'text-domain'));
     return array(
       'result' => 'success',
-      'redirect' => $this->get_return_url($order),
+      'redirect' => get_option('pagstar_link_r'),
     );
   }
 

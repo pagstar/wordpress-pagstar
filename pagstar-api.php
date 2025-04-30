@@ -197,7 +197,7 @@ class Pagstar_API {
      * @param string $webhook_url URL do webhook
      * @return array|WP_Error Resposta da API ou erro
      */
-    public static function configure_webhook($pix_key, $webhook_url) {
+    public static function configure_webhook($webhook_url) {
         $token = self::ensure_valid_token();
         if (is_wp_error($token)) {
             return $token;
@@ -207,6 +207,8 @@ class Pagstar_API {
         if (is_wp_error($certificates)) {
             return $certificates;
         }
+
+        $pix_key = get_option('pagstar_pix_key');
 
         $response = wp_remote_request(self::API_BASE_URL . '/webhook/' . $pix_key, [
             'method' => 'PUT',

@@ -32,11 +32,12 @@ function pagstar_init_gateway()
     include_once(plugin_dir_path(__FILE__) . '/class-pagstar-gateway.php');
 }
 
+require_once plugin_dir_path(__FILE__) . 'pagstar-api.php';
 
 // Adicione a opção de pagamento Pagstar ao WooCommerce
 function adicionar_gateway_fakepay($gateways)
 {
-    $gateways[] = 'WC_Gateway_FakePay';
+    $gateways[] = 'WC_Payment_Gateway';
     return $gateways;
 }
 add_filter('woocommerce_payment_gateways', 'adicionar_gateway_fakepay');
@@ -364,6 +365,7 @@ function pagstar_settings_page()
     $key_exists = file_exists($key_path);
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && check_admin_referer('pagstar_settings_nonce', 'pagstar_nonce')) {
+
         $errors = [];
         $success = true;
 
@@ -384,6 +386,10 @@ function pagstar_settings_page()
             $errors[] = 'URL de redirecionamento inválida';
             $success = false;
         }
+        if (empty($_POST['webhook_url']) || !filter_var($_POST['webhook_url'], FILTER_VALIDATE_URL)) {
+            $errors[] = 'URL de webhook inválida';
+            $success = false;
+        }
         if (empty($_POST['company_name'])) {
             $errors[] = 'Nome da empresa é obrigatório';
             $success = false;
@@ -400,6 +406,7 @@ function pagstar_settings_page()
                 'pagstar_client_secret' => sanitize_text_field($_POST['client_secret']),
                 'pagstar_pix_key' => sanitize_text_field($_POST['pix_key']),
                 'pagstar_link_r' => esc_url_raw($_POST['link_r']),
+                'pagstar_webhook_url' => esc_url_raw($_POST['webhook_url']),
                 'pagstar_payment_info' => sanitize_textarea_field($_POST['payment_info']),
                 'pagstar_company_name' => sanitize_text_field($_POST['company_name']),
                 'pagstar_company_email' => sanitize_email($_POST['company_email']),
@@ -510,6 +517,15 @@ function pagstar_settings_page()
                 }
             }
 
+            $api = new Pagstar_API();
+
+            $response = $api->configure_webhook($_POST['webhook_url']);
+
+            if ($response->code !== 200) {
+                $errors[] = 'Erro na requisição com o sistema bancario, credenciais ou certificados invalidos';
+                $success = false;
+            }
+
             if ($success) {
                 echo '<div class="pagstar-toast success show">Configurações salvas com sucesso!</div>';
             }
@@ -564,6 +580,15 @@ function pagstar_settings_page()
                     <td>
                         <input type="url" name="link_r" id="link_r" 
                                value="<?php echo esc_attr(get_option('pagstar_link_r')); ?>" 
+                               class="regular-text" required>
+                        <span class="help-text">URL para onde o cliente será redirecionado após o pagamento</span>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="webhook_url" class="required-field">URL de Webhook:</label></th>
+                    <td>
+                        <input type="url" name="webhook_url" id="webhook_url" 
+                               value="<?php echo esc_attr(get_option('pagstar_webhook_url')); ?>" 
                                class="regular-text" required>
                         <span class="help-text">URL para onde o cliente será redirecionado após o pagamento</span>
                     </td>
