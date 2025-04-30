@@ -50,7 +50,8 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       'subscription_payment_method_change_customer',
       'subscription_payment_method_change_admin',
       'multiple_subscriptions',
-      'pre-orders'
+      'pre-orders',
+      'custom_order_tables'
     );
 
     // Carregar configurações
@@ -69,6 +70,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     add_action('woocommerce_api_' . $this->id, array($this, 'webhook'));
     add_action('woocommerce_receipt_' . $this->id, array($this, 'receipt_page'));
     add_action('template_redirect', array($this, 'callback_handler'));
+    add_action('woocommerce_admin_order_data_after_billing_address', array($this, 'display_admin_order_meta'), 10, 1);
   }
 
   public function init_form_fields()
@@ -337,6 +339,17 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
           exit;
         }
       }
+    }
+  }
+
+  public function display_admin_order_meta($order)
+  {
+    $transaction_id = $order->get_meta('_transaction_id');
+    if ($transaction_id) {
+      echo '<div class="order_data_column">';
+      echo '<h4>' . __('Informações do Pagamento', 'pagstar') . '</h4>';
+      echo '<p><strong>' . __('ID da Transação:', 'pagstar') . '</strong> ' . $transaction_id . '</p>';
+      echo '</div>';
     }
   }
 }

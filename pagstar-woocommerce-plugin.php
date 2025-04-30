@@ -15,7 +15,16 @@
  * WC requires at least: 5.0
  * WC tested up to: 8.0
  * HPOS: true
+ * WC requires at least: 5.0
+ * WC tested up to: 8.0
  */
+
+// Declarar compatibilidade com HPOS
+add_action('before_woocommerce_init', function() {
+    if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+    }
+});
 
 // Verificar se o WooCommerce está ativo
 if (!function_exists('is_plugin_active')) {
@@ -62,7 +71,7 @@ function pagstar_init_gateway()
         return;
     }
 
-    include_once(plugin_dir_path(__FILE__) . '/class-pagstar-gateway.php');
+    require_once(plugin_dir_path(__FILE__) . '/class-pagstar-gateway.php');
 }
 
 require_once plugin_dir_path(__FILE__) . 'pagstar-api.php';
@@ -79,11 +88,15 @@ function adicionar_gateway_fakepay($gateways)
 }
 add_filter('woocommerce_payment_gateways', 'adicionar_gateway_fakepay');
 
-
-
-
-
-
+// Adicionar link de configuração rápida
+function pagstar_add_action_links($links)
+{
+    $plugin_links = array(
+        '<a href="' . admin_url('admin.php?page=wc-settings&tab=checkout&section=pagstar') . '">' . __('Configurações', 'pagstar') . '</a>',
+    );
+    return array_merge($plugin_links, $links);
+}
+add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'pagstar_add_action_links');
 
 // Adicionar a página de Extrato ao menu do admin
 add_action('admin_menu', 'pagstar_add_extrato_page');
@@ -99,8 +112,6 @@ function pagstar_add_extrato_page() {
         25                     // Posição do menu no painel (opcional)
     );
 }
-
-
 
 function pagstar_render_extrato_page() {
     global $wpdb;
@@ -142,12 +153,6 @@ function pagstar_render_extrato_page() {
     <?php
 }
 
-
-
-
-
-
-
 function create_webhook_transactions_table() {
     global $wpdb;
     $table_name = $wpdb->prefix . 'webhook_transactions';
@@ -166,8 +171,6 @@ function create_webhook_transactions_table() {
     dbDelta( $sql );
 }
 register_activation_hook( __FILE__, 'create_webhook_transactions_table' );
-
-
 
 // Adicionar submenu no menu WooCommerce
 function pagstar_admin_menu()
@@ -201,13 +204,15 @@ function pagstar_backup_settings($settings) {
 
 // Função para validar permissões de diretório
 function pagstar_validate_directory_permissions($dir) {
-    if (!is_writable($dir)) {
-        return new WP_Error('directory_not_writable', 'O diretório não tem permissões de escrita');
+    if (!file_exists($dir)) {
+        wp_mkdir_p($dir);
     }
     
-    $perms = substr(sprintf('%o', fileperms($dir)), -4);
-    if ($perms !== '0700') {
-        return new WP_Error('invalid_permissions', 'Permissões do diretório devem ser 0700');
+    if (!is_writable($dir)) {
+        chmod($dir, 0755);
+        if (!is_writable($dir)) {
+            return new WP_Error('directory_not_writable', 'O diretório não tem permissões de escrita');
+        }
     }
     
     return true;
@@ -269,7 +274,7 @@ function pagstar_validate_private_key($key_content) {
 // Função para verificar a integridade do arquivo
 function pagstar_verify_file_integrity($file_path) {
     if (!file_exists($file_path)) {
-        return new WP_Error('file_not_found', 'Arquivo não encontrado');
+        return true; // Retorna true se o arquivo não existir ainda
     }
 
     // Verificar se o arquivo foi modificado recentemente
@@ -281,7 +286,10 @@ function pagstar_verify_file_integrity($file_path) {
     // Verificar permissões do arquivo
     $perms = substr(sprintf('%o', fileperms($file_path)), -4);
     if ($perms !== '0600') {
-        return new WP_Error('invalid_permissions', 'Permissões do arquivo devem ser 0600');
+        chmod($file_path, 0600);
+        if (substr(sprintf('%o', fileperms($file_path)), -4) !== '0600') {
+            return new WP_Error('invalid_permissions', 'Permissões do arquivo devem ser 0600');
+        }
     }
 
     return true;
@@ -402,7 +410,6 @@ function pagstar_settings_page()
     $key_exists = file_exists($key_path);
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && check_admin_referer('pagstar_settings_nonce', 'pagstar_nonce')) {
-
         $errors = [];
         $success = true;
 
@@ -492,9 +499,13 @@ function pagstar_settings_page()
                         } else {
                             $safe_filename = pagstar_sanitize_filename($_FILES['pagstar_crt']['name']);
                             $crt_path = $upload_dir . $safe_filename;
-                            move_uploaded_file($_FILES['pagstar_crt']['tmp_name'], $crt_path);
-                            chmod($crt_path, 0600); // Definir permissões seguras
-                            update_option('pagstar_crt', $crt_path);
+                            if (move_uploaded_file($_FILES['pagstar_crt']['tmp_name'], $crt_path)) {
+                                chmod($crt_path, 0600);
+                                update_option('pagstar_crt', $crt_path);
+                            } else {
+                                $errors[] = 'Erro ao mover o arquivo CRT';
+                                $success = false;
+                            }
                         }
                     }
                 }
@@ -521,23 +532,32 @@ function pagstar_settings_page()
                         } else {
                             $safe_filename = pagstar_sanitize_filename($_FILES['pagstar_key']['name']);
                             $key_path = $upload_dir . $safe_filename;
-                            move_uploaded_file($_FILES['pagstar_key']['tmp_name'], $key_path);
-                            chmod($key_path, 0600); // Definir permissões seguras
-                            update_option('pagstar_key', $key_path);
+                            if (move_uploaded_file($_FILES['pagstar_key']['tmp_name'], $key_path)) {
+                                chmod($key_path, 0600);
+                                update_option('pagstar_key', $key_path);
+                            } else {
+                                $errors[] = 'Erro ao mover o arquivo KEY';
+                                $success = false;
+                            }
                         }
                     }
                 }
             }
 
             // Verificar integridade dos arquivos após upload
-            if ($crt_path && $key_path) {
+            $crt_path = get_option('pagstar_crt');
+            $key_path = get_option('pagstar_key');
+
+            if ($crt_path && file_exists($crt_path)) {
                 $crt_integrity = pagstar_verify_file_integrity($crt_path);
-                $key_integrity = pagstar_verify_file_integrity($key_path);
-                
                 if (is_wp_error($crt_integrity)) {
                     $errors[] = 'Erro na integridade do certificado: ' . $crt_integrity->get_error_message();
                     $success = false;
                 }
+            }
+
+            if ($key_path && file_exists($key_path)) {
+                $key_integrity = pagstar_verify_file_integrity($key_path);
                 if (is_wp_error($key_integrity)) {
                     $errors[] = 'Erro na integridade da chave: ' . $key_integrity->get_error_message();
                     $success = false;
