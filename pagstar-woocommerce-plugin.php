@@ -10,6 +10,10 @@
  * License URI: https://pagstar.com.br/licenca
  * Text Domain: pagstar
  * Domain Path: /languages
+ * Requires at least: 5.0
+ * Requires PHP: 7.4
+ * WC requires at least: 5.0
+ * WC tested up to: 8.0
  */
 
 // Verificar se o WooCommerce está ativo
