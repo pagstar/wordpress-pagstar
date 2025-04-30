@@ -29,7 +29,6 @@ class WC_Gateway_FakePay extends WC_Payment_Gateway
 
 
     $this->id = 'pagstar';
-
     $this->method_title = 'Pagstar';
     $this->method_description = 'Pagamento via Pagstar ';
     $this->title = 'Pagstar';
@@ -37,8 +36,6 @@ class WC_Gateway_FakePay extends WC_Payment_Gateway
     $this->has_fields = false;
     $this->init_form_fields();
     $this->init_settings();
-    $this->enabled = $this->get_option('enabled');
-    $this->title = $this->get_option('title');
     add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
     add_action('woocommerce_thankyou_' . $this->id, array($this, 'thankyou_page'));
     add_action('template_redirect', array($this, 'callback_handler'));
@@ -46,21 +43,7 @@ class WC_Gateway_FakePay extends WC_Payment_Gateway
 
   public function init_form_fields()
   {
-    $this->form_fields = array(
-      'enabled' => array(
-        'title' => 'Ativar/Desativar',
-        'type' => 'checkbox',
-        'label' => 'Ativar Pagstar',
-        'default' => 'yes',
-      ),
-      'title' => array(
-        'title' => 'Título',
-        'type' => 'text',
-        'description' => 'Título que o usuário verá durante o checkout.',
-        'default' => 'PIX (Pagstar)',
-        'desc_tip' => true,
-      ),
-    );
+    $this->form_fields = array();
   }
 
   public function process_payment($order_id)
@@ -75,8 +58,6 @@ class WC_Gateway_FakePay extends WC_Payment_Gateway
     );
   }
 
-
-
   public function enviar_requisicao_pagamento($order_id)
   {
     $order = wc_get_order($order_id);
@@ -86,7 +67,7 @@ class WC_Gateway_FakePay extends WC_Payment_Gateway
     // Restante do código permanece inalterado
 
     // Chave pix bancaria
-    $pix_key = get_option('pix_key');
+    $pix_key = get_option('pagstar_pix_key');
 
     $data = array(
       'valor' => [
@@ -214,7 +195,7 @@ class WC_Gateway_FakePay extends WC_Payment_Gateway
               success: function (data) {
 
                 if (data == 1) {
-                  window.location.href = '<?= get_option('link_r'); ?>';
+                  window.location.href = '<?= get_option('pagstar_link_r'); ?>';
 
                   var order_id = '<?php echo $order_id; ?>'; // Substitua pelo ID real do pedido
                   set_order_status(order_id, 'completed');
@@ -234,7 +215,7 @@ class WC_Gateway_FakePay extends WC_Payment_Gateway
 
           $(document).ready(function () {
             var transaction_id = '<?php echo $response_data['txid']; ?>'; // Substitua pelo ID real da transação
-            var refer = '<?php echo get_option('pagstar_token'); ?>'; // Substitua pelo ID real da transação
+            var refer = '<?php echo get_option('pagstar_client_id'); ?>'; // Usando client_id como referência
             checkTransactionStatus(transaction_id, refer);
           });
 

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Plugin de pix Pagstar
  * Description: Plugin pix para WooCommerce usando a API Pagstar.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Pagstar
  * Plugin URI: https://pagstar.com/
  * Text Domain: plugin-pagstar
@@ -311,6 +311,49 @@ function pagstar_settings_page()
             color: #dc3545;
             margin-left: 4px;
         }
+        /* Estilos do Toast/Snackbar */
+        .pagstar-toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1;
+            right: 30px;
+            top: 30px;
+            font-size: 17px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .pagstar-toast.success {
+            background-color: #4CAF50;
+        }
+        .pagstar-toast.error {
+            background-color: #f44336;
+        }
+        .pagstar-toast.show {
+            visibility: visible;
+            -webkit-animation: fadein 0.5s, fadeout 0.5s 4.5s;
+            animation: fadein 0.5s, fadeout 0.5s 4.5s;
+        }
+        @-webkit-keyframes fadein {
+            from {top: 0; opacity: 0;} 
+            to {top: 30px; opacity: 1;}
+        }
+        @keyframes fadein {
+            from {top: 0; opacity: 0;}
+            to {top: 30px; opacity: 1;}
+        }
+        @-webkit-keyframes fadeout {
+            from {top: 30px; opacity: 1;} 
+            to {top: 0; opacity: 0;}
+        }
+        @keyframes fadeout {
+            from {top: 30px; opacity: 1;}
+            to {top: 0; opacity: 0;}
+        }
     </style>
     <?php
 
@@ -337,25 +380,30 @@ function pagstar_settings_page()
             $errors[] = 'Chave PIX é obrigatória';
             $success = false;
         }
-        if (empty($_POST['user_agent'])) {
-            $errors[] = 'Empresa/Contato é obrigatório';
-            $success = false;
-        }
         if (empty($_POST['link_r']) || !filter_var($_POST['link_r'], FILTER_VALIDATE_URL)) {
             $errors[] = 'URL de redirecionamento inválida';
+            $success = false;
+        }
+        if (empty($_POST['company_name'])) {
+            $errors[] = 'Nome da empresa é obrigatório';
+            $success = false;
+        }
+        if (empty($_POST['company_email']) || !filter_var($_POST['company_email'], FILTER_VALIDATE_EMAIL)) {
+            $errors[] = 'Email da empresa é obrigatório e deve ser válido';
             $success = false;
         }
 
         if ($success) {
             // Preparar configurações para backup
             $settings = array(
-                'client_id' => sanitize_text_field($_POST['client_id']),
-                'client_secret' => sanitize_text_field($_POST['client_secret']),
-                'pix_key' => sanitize_text_field($_POST['pix_key']),
-                'user_agent' => sanitize_text_field($_POST['user_agent']),
-                'link_r' => esc_url_raw($_POST['link_r']),
-                'payment_info' => sanitize_textarea_field($_POST['payment_info']),
-                'expiration_time' => intval($_POST['expiration_time'])
+                'pagstar_client_id' => sanitize_text_field($_POST['client_id']),
+                'pagstar_client_secret' => sanitize_text_field($_POST['client_secret']),
+                'pagstar_pix_key' => sanitize_text_field($_POST['pix_key']),
+                'pagstar_link_r' => esc_url_raw($_POST['link_r']),
+                'pagstar_payment_info' => sanitize_textarea_field($_POST['payment_info']),
+                'pagstar_company_name' => sanitize_text_field($_POST['company_name']),
+                'pagstar_company_email' => sanitize_email($_POST['company_email']),
+                'pagstar_expiration_time' => intval($_POST['expiration_time'])
             );
 
             // Fazer backup antes de atualizar
@@ -367,7 +415,7 @@ function pagstar_settings_page()
 
             // Atualizar configurações
             foreach ($settings as $key => $value) {
-                update_option('pagstar_' . $key, $value);
+                update_option($key, $value);
             }
 
             $upload_dir = ABSPATH . 'certificados_pagstar/';
@@ -463,12 +511,12 @@ function pagstar_settings_page()
             }
 
             if ($success) {
-                echo '<div class="notice notice-success is-dismissible"><p>Configurações salvas com sucesso! Backup criado em: ' . esc_html($backup_file) . '</p></div>';
+                echo '<div class="pagstar-toast success show">Configurações salvas com sucesso!</div>';
             }
         }
 
         if (!empty($errors)) {
-            echo '<div class="notice notice-error is-dismissible"><p><strong>Erro:</strong> ' . implode('<br>', $errors) . '</p></div>';
+            echo '<div class="pagstar-toast error show">' . implode('<br>', $errors) . '</div>';
         }
     }
     ?>
@@ -488,7 +536,7 @@ function pagstar_settings_page()
                     <th><label for="client_id" class="required-field">Client ID:</label></th>
                     <td>
                         <input type="text" name="client_id" id="client_id" 
-                               value="<?php echo esc_attr(get_option('client_id')); ?>" 
+                               value="<?php echo esc_attr(get_option('pagstar_client_id')); ?>" 
                                class="regular-text" required>
                         <span class="help-text">ID do cliente fornecido pela Pagstar</span>
                     </td>
@@ -497,7 +545,7 @@ function pagstar_settings_page()
                     <th><label for="client_secret" class="required-field">Client Secret:</label></th>
                     <td>
                         <input type="text" name="client_secret" id="client_secret" 
-                               value="<?php echo esc_attr(get_option('client_secret')); ?>" 
+                               value="<?php echo esc_attr(get_option('pagstar_client_secret')); ?>" 
                                class="regular-text" required>
                         <span class="help-text">Chave secreta do cliente fornecida pela Pagstar</span>
                     </td>
@@ -506,25 +554,16 @@ function pagstar_settings_page()
                     <th><label for="pix_key" class="required-field">Chave PIX:</label></th>
                     <td>
                         <input type="text" name="pix_key" id="pix_key" 
-                               value="<?php echo esc_attr(get_option('pix_key')); ?>" 
+                               value="<?php echo esc_attr(get_option('pagstar_pix_key')); ?>" 
                                class="regular-text" required>
                         <span class="help-text">Chave PIX cadastrada na Pagstar</span>
-                    </td>
-                </tr>
-                <tr>
-                    <th><label for="user_agent" class="required-field">Empresa/Contato:</label></th>
-                    <td>
-                        <input type="text" name="user_agent" id="user_agent" 
-                               value="<?php echo esc_attr(get_option('pagstar_user_agent')); ?>" 
-                               class="regular-text" required>
-                        <span class="help-text">Nome da empresa ou contato responsável</span>
                     </td>
                 </tr>
                 <tr>
                     <th><label for="link_r" class="required-field">URL de Redirecionamento:</label></th>
                     <td>
                         <input type="url" name="link_r" id="link_r" 
-                               value="<?php echo esc_attr(get_option('link_r')); ?>" 
+                               value="<?php echo esc_attr(get_option('pagstar_link_r')); ?>" 
                                class="regular-text" required>
                         <span class="help-text">URL para onde o cliente será redirecionado após o pagamento</span>
                     </td>
@@ -577,6 +616,24 @@ function pagstar_settings_page()
 3. Confirme os dados e finalize o pagamento
 4. O status do pedido será atualizado automaticamente')); ?></textarea>
                         <span class="help-text">Informações adicionais que serão exibidas durante o processo de pagamento</span>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="company_name" class="required-field">Nome da Empresa:</label></th>
+                    <td>
+                        <input type="text" name="company_name" id="company_name" 
+                               value="<?php echo esc_attr(get_option('pagstar_company_name')); ?>" 
+                               class="regular-text" required>
+                        <span class="help-text">Nome da empresa que será exibido nas informações de pagamento</span>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="company_email" class="required-field">Email da Empresa:</label></th>
+                    <td>
+                        <input type="email" name="company_email" id="company_email" 
+                               value="<?php echo esc_attr(get_option('pagstar_company_email')); ?>" 
+                               class="regular-text" required>
+                        <span class="help-text">Email da empresa para contato</span>
                     </td>
                 </tr>
                 <tr>
