@@ -89,19 +89,19 @@ O plugin utiliza um sistema automatizado de versionamento baseado em [Semantic V
 
 ## Suporte
 
-Para suporte técnico, entre em contato através do email: atendimento@pagstar.com
+Para suporte técnico, entre em contato através do email: [atendimento@pagstar.com](mailto:atendimento@pagstar.com)
 
 ## Licença
 
-Este plugin está licenciado sob a Licença de Software Livre Pagstar. Consulte o arquivo [LICENSE](LICENSE) para obter mais detalhes.
+Este plugin está licenciado sob a Licença de Software Livre Pagstar. Consulte o arquivo [LICENSE](LICENSE.md) para obter mais detalhes.
 
 ## Contribuição
 
-Contribuições são bem-vindas! Por favor, leia as diretrizes de contribuição antes de enviar um pull request.
+Contribuições são bem-vindas! Por favor, leia as diretrizes de contribuição antes de enviar um pull request em [CONTRIBUTING](CONTRIBUTING.md).
 
 ## Changelog
 
-Todas as mudanças notáveis deste projeto serão documentadas no arquivo [CHANGELOG.md](CHANGELOG.md).
+Todas as mudanças notáveis deste projeto serão documentadas no arquivo [CHANGELOG](CHANGELOG.md).
 
 ## Colaboradores
 
