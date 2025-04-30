@@ -2,7 +2,7 @@
 
 ## Relatando Vulnerabilidades
 
-Se você descobrir uma vulnerabilidade de segurança no Plugin Pagstar, por favor, entre em contato conosco através do email security@pagstar.com. Não divulgue a vulnerabilidade publicamente até que tenhamos tido a chance de corrigi-la.
+Se você descobrir uma vulnerabilidade de segurança no Plugin Pagstar, por favor, entre em contato conosco através do email tecnologia@pagstar.com. Não divulgue a vulnerabilidade publicamente até que tenhamos tido a chance de corrigi-la.
 
 ## Requisitos de Segurança
 
@@ -68,7 +68,7 @@ Se você descobrir uma vulnerabilidade de segurança no Plugin Pagstar, por favo
 
 ## Contato
 
-Para questões de segurança, entre em contato:
-- Email: security@pagstar.com
-- Página: https://pagstar.com/security
-- Telefone: +55 (XX) XXXX-XXXX 
+Para questões de segurança, entre em contato através dos canais oficiais:
+
+- Email: [tecnologia@pagstar.com](mailto:tecnologia@pagstar.com)
+- Telefone: [+55 (11) 94241-2844](tel:+5511942412844)

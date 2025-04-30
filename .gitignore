@@ -1,1 +1,69 @@
+# Arquivos do sistema
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Diretórios do WordPress
+wp-content/cache/
+wp-content/upgrade/
+wp-content/backup*/
+wp-content/backup-*/
+wp-content/backups/
+wp-content/plugins/hello.php
+wp-content/plugins/akismet/
+
+# Logs e arquivos de debug
+*.log
+debug.log
+error_log
+php_error.log
+
+# Arquivos de ambiente
+.env
+.env.*
+!.env.example
+config.local.php
+wp-config-local.php
+
+# Arquivos de IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Arquivos de build e dependências
+node_modules/
+vendor/
+composer.lock
+package-lock.json
+yarn.lock
+
+# Arquivos de certificados
+certificados_pagstar/
+*.crt
+*.key
+*.pem
+
+# Arquivos temporários
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Arquivos de backup
+*.bak
+*.backup
+*.old
+*.orig
+
+# Arquivos de cache
+*.cache
+.cache/
+wp-content/cache/
+wp-content/upgrade/
+
+# Arquivos de mídia temporários
+wp-content/uploads/temp/
+wp-content/uploads/cache/
