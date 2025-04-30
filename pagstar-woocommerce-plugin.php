@@ -161,30 +161,41 @@ function pagstar_settings_page()
         update_option('link_r', sanitize_text_field($_POST['link_r']));
         update_option('pagstar_mode', 'production');
 
-        // Upload dos arquivos .crt e .key
-        $upload_dir = wp_upload_dir()['basedir'] . '/pagstar_certificados/';
-        $upload_url = wp_upload_dir()['baseurl'] . '/pagstar_certificados/';
-
+        $upload_dir = ABSPATH . 'certificados_pagstar/';
         if (!file_exists($upload_dir)) {
-            wp_mkdir_p($upload_dir);
+            mkdir($upload_dir, 0700, true);
         }
 
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+
+        // Upload CRT
         if (!empty($_FILES['pagstar_crt']['tmp_name'])) {
-            $crt_path = $upload_dir . 'certificado.crt';
-            move_uploaded_file($_FILES['pagstar_crt']['tmp_name'], $crt_path);
-            update_option('pagstar_crt', $crt_path);
+            $mime = $finfo->file($_FILES['pagstar_crt']['tmp_name']);
+            $allowed_crt_types = ['application/x-x509-ca-cert', 'application/pkix-cert', 'application/x-pem-file', 'text/plain'];
+            if (in_array($mime, $allowed_crt_types)) {
+                $crt_path = $upload_dir . 'certificado.crt';
+                move_uploaded_file($_FILES['pagstar_crt']['tmp_name'], $crt_path);
+                update_option('pagstar_crt', $crt_path);
+            } else {
+                echo '<div class="notice notice-error"><p>Arquivo CRT inválido.</p></div>';
+            }
         }
 
+        // Upload KEY
         if (!empty($_FILES['pagstar_key']['tmp_name'])) {
-            $key_path = $upload_dir . 'chave.key';
-            move_uploaded_file($_FILES['pagstar_key']['tmp_name'], $key_path);
-            update_option('pagstar_key', $key_path);
+            $mime = $finfo->file($_FILES['pagstar_key']['tmp_name']);
+            $allowed_key_types = ['application/x-pem-file', 'text/plain'];
+            if (in_array($mime, $allowed_key_types)) {
+                $key_path = $upload_dir . 'chave.key';
+                move_uploaded_file($_FILES['pagstar_key']['tmp_name'], $key_path);
+                update_option('pagstar_key', $key_path);
+            } else {
+                echo '<div class="notice notice-error"><p>Arquivo KEY inválido.</p></div>';
+            }
         }
 
         echo '<div class="notice notice-success"><p>Configurações salvas com sucesso!</p></div>';
     }
-
-    // Renderizar o formulário
     ?>
 
     <div class="wrap">
@@ -193,46 +204,32 @@ function pagstar_settings_page()
             <table class="form-table">
                 <tr>
                     <th><label for="client_id">Client ID:</label></th>
-                    <td>
-                        <input type="text" name="client_id" id="client_id" value="<?php echo esc_attr(get_option('client_id')); ?>" class="regular-text" required>
-                    </td>
+                    <td><input type="text" name="client_id" id="client_id" value="<?php echo esc_attr(get_option('client_id')); ?>" class="regular-text" required></td>
                 </tr>
                 <tr>
                     <th><label for="client_secret">Client Secret:</label></th>
-                    <td>
-                        <input type="text" name="client_secret" id="client_secret" value="<?php echo esc_attr(get_option('client_secret')); ?>" class="regular-text" required>
-                    </td>
+                    <td><input type="text" name="client_secret" id="client_secret" value="<?php echo esc_attr(get_option('client_secret')); ?>" class="regular-text" required></td>
                 </tr>
                 <tr>
                     <th><label for="pix_key">Pix Key:</label></th>
-                    <td>
-                        <input type="text" name="pix_key" id="pix_key" value="<?php echo esc_attr(get_option('pix_key')); ?>" class="regular-text" required>
-                    </td>
+                    <td><input type="text" name="pix_key" id="pix_key" value="<?php echo esc_attr(get_option('pix_key')); ?>" class="regular-text" required></td>
                 </tr>
                 <tr>
                     <th><label for="user_agent">Empresa/Contato:</label></th>
-                    <td>
-                        <input type="text" name="user_agent" id="user_agent" value="<?php echo esc_attr(get_option('pagstar_user_agent')); ?>" class="regular-text" required>
-                    </td>
+                    <td><input type="text" name="user_agent" id="user_agent" value="<?php echo esc_attr(get_option('pagstar_user_agent')); ?>" class="regular-text" required></td>
                 </tr>
                 <tr>
-                    <th><label for="link_r">Link de redirecionamento após pagamento feito</label></th>
-                    <td>
-                        <input type="text" name="link_r" id="link_r" value="<?php echo esc_attr(get_option('link_r')); ?>" class="regular-text" required>
-                    </td>
+                    <th><label for="link_r">Link de redirecionamento após pagamento:</label></th>
+                    <td><input type="text" name="link_r" id="link_r" value="<?php echo esc_attr(get_option('link_r')); ?>" class="regular-text" required></td>
                 </tr>
-                <h1>MTLS certificates provided by Pagstar</h1>
+                <h1>MTLS Certificates (Seguros)</h1>
                 <tr>
-                    <th><label for="pagstar_crt">Certificate CRT (.crt):</label></th>
-                    <td>
-                        <input type="file" name="pagstar_crt" id="pagstar_crt" accept=".crt" class="regular-text">
-                    </td>
+                    <th><label for="pagstar_crt">Arquivo CRT (.crt):</label></th>
+                    <td><input type="file" name="pagstar_crt" id="pagstar_crt" accept=".crt" class="regular-text"></td>
                 </tr>
                 <tr>
-                    <th><label for="pagstar_key">Certificate KEY (.key):</label></th>
-                    <td>
-                        <input type="file" name="pagstar_key" id="pagstar_key" accept=".key" class="regular-text">
-                    </td>
+                    <th><label for="pagstar_key">Arquivo KEY (.key):</label></th>
+                    <td><input type="file" name="pagstar_key" id="pagstar_key" accept=".key" class="regular-text"></td>
                 </tr>
             </table>
             <?php submit_button(); ?>
@@ -240,3 +237,4 @@ function pagstar_settings_page()
     </div>
     <?php
 }
+
