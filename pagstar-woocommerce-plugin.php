@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Plugin de pix Pagstar
  * Description: Plugin pix para WooCommerce usando a API Pagstar.
- * Version: 1.0
+ * Version: 1.0.1
  * Author: Pagstar
  * Plugin URI: https://pagstar.com/
  * Text Domain: plugin-pagstar
