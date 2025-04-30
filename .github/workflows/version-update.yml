@@ -7,13 +7,18 @@ on:
     paths:
       - 'pagstar-woocommerce-plugin.php'
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   update-version:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configurar Git
         run: |
@@ -27,10 +32,10 @@ jobs:
           NEW_VERSION=$(git show HEAD:pagstar-woocommerce-plugin.php | grep "Version:" | sed 's/Version: //')
           
           if [ "$OLD_VERSION" != "$NEW_VERSION" ]; then
-            echo "::set-output name=changed::true"
-            echo "::set-output name=new_version::$NEW_VERSION"
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=changed::false"
+            echo "changed=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Atualizar CHANGELOG
@@ -55,15 +60,16 @@ jobs:
           mv temp_changelog.md CHANGELOG.md
           
           git add CHANGELOG.md
-          git commit -m "docs: atualiza CHANGELOG para versão $NEW_VERSION"
-          git push
+          git commit -m "docs: update CHANGELOG for version $NEW_VERSION"
+          git push origin main
 
       - name: Criar Release
         if: steps.version.outputs.changed == 'true'
         uses: softprops/action-gh-release@v1
         with:
-          name: "Versão ${{ steps.version.outputs.new_version }}"
+          name: "Version ${{ steps.version.outputs.new_version }}"
           tag_name: "v${{ steps.version.outputs.new_version }}"
-          body: "Nova versão do plugin Pagstar"
+          body: "New version of Pagstar plugin"
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
