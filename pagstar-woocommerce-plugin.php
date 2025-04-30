@@ -187,6 +187,23 @@ function pagstar_admin_menu()
 
 add_action('admin_menu', 'pagstar_admin_menu');
 
+add_action('http_api_curl', function($handle, $r, $url) {
+    if (strpos($url, 'api.pagstar.com') === false) {
+        return;
+    }
+
+    $crt = get_option('pagstar_cert_crt_path');
+    $key = get_option('pagstar_cert_key_path');
+
+    if ($crt && file_exists($crt)) {
+        curl_setopt($handle, CURLOPT_SSLCERT, $crt);
+    }
+
+    if ($key && file_exists($key)) {
+        curl_setopt($handle, CURLOPT_SSLKEY, $key);
+    }
+}, 10, 3);
+
 // Função para backup automático de configurações
 function pagstar_backup_settings($settings) {
     $backup_dir = WP_CONTENT_DIR . '/pagstar_backups/';
@@ -634,9 +651,11 @@ function pagstar_settings_page()
 
             $response = $api->configure_webhook($_POST['webhook_url']);
 
-            if ($response->code !== 200) {
-                $errors[] = 'Erro na requisição com o sistema bancario, credenciais ou certificados invalidos';
-                $errors[] = $response->code;
+            if ($response['code'] !== 200) {
+                $errors[] = [
+                    'Erro na requisição com o sistema bancario, credenciais ou certificados invalidos',
+                    $response['code']
+                ];
                 $success = false;
             }
 
@@ -752,10 +771,10 @@ function pagstar_settings_page()
                     <td>
                         <textarea name="payment_info" id="payment_info" rows="4" class="regular-text"><?php echo esc_textarea(get_option('pagstar_payment_info', 'Para realizar o pagamento via PIX:
 
-1. Abra o aplicativo do seu banco
-2. Escaneie o QR Code ou copie o código PIX
-3. Confirme os dados e finalize o pagamento
-4. O status do pedido será atualizado automaticamente')); ?></textarea>
+            1. Abra o aplicativo do seu banco
+            2. Escaneie o QR Code ou copie o código PIX
+            3. Confirme os dados e finalize o pagamento
+            4. O status do pedido será atualizado automaticamente')); ?></textarea>
                         <span class="help-text">Informações adicionais que serão exibidas durante o processo de pagamento</span>
                     </td>
                 </tr>

@@ -36,6 +36,9 @@ class Pagstar_API {
             return new WP_Error('certificates_not_found', 'Arquivos de certificado não encontrados');
         }
 
+        update_option('pagstar_cert_crt_path', $crt_path, false);
+        update_option('pagstar_cert_key_path', $key_path, false);
+
         return [
             'crt' => $crt_path,
             'key' => $key_path
@@ -75,10 +78,12 @@ class Pagstar_API {
                 'client_id' => $client_id,
                 'client_secret' => $client_secret,
             ]),
-            'sslverify' => false,
-            'sslcertificates' => $certificates['crt'],
-            'sslkey' => $certificates['key'],
+            'sslverify' => false
         ]);
+
+        // Limpa os certificados temporários após a chamada
+        delete_option('pagstar_cert_crt_path');
+        delete_option('pagstar_cert_key_path');
 
         if (is_wp_error($response)) {
             return $response;
@@ -132,10 +137,12 @@ class Pagstar_API {
                 'Authorization' => 'Bearer ' . $token,
             ],
             'body' => json_encode($data),
-            'sslverify' => false,
-            'sslcertificates' => $certificates['crt'],
-            'sslkey' => $certificates['key'],
+            'sslverify' => false
         ]);
+
+        // Limpa os certificados temporários após a chamada
+        delete_option('pagstar_cert_crt_path');
+        delete_option('pagstar_cert_key_path');
 
         if (is_wp_error($response)) {
             return [
@@ -172,10 +179,12 @@ class Pagstar_API {
                 'Content-Type' => 'application/json',
                 'Authorization' => 'Bearer ' . $token,
             ],
-            'sslverify' => false,
-            'sslcertificates' => $certificates['crt'],
-            'sslkey' => $certificates['key'],
+            'sslverify' => false
         ]);
+
+        // Limpa os certificados temporários após a chamada
+        delete_option('pagstar_cert_crt_path');
+        delete_option('pagstar_cert_key_path');
 
         if (is_wp_error($response)) {
             return [
@@ -202,32 +211,33 @@ class Pagstar_API {
         if (is_wp_error($token)) {
             return $token;
         }
-
+    
         $certificates = self::get_certificates();
         if (is_wp_error($certificates)) {
             return $certificates;
         }
-
+    
+        // Armazena os caminhos dos certificados em uma opção temporária para o hook usar
+    
         $pix_key = get_option('pagstar_pix_key');
-
+    
         $response = wp_remote_request(self::API_BASE_URL . '/webhook/' . $pix_key, [
             'method' => 'PUT',
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Authorization' => 'Bearer ' . $token,
             ],
-            'body' => json_encode([
-                'webhookUrl' => $webhook_url,
-            ]),
-            'sslverify' => false,
-            'sslcertificates' => $certificates['crt'],
-            'sslkey' => $certificates['key'],
+            'body'      => json_encode(['webhookUrl' => $webhook_url]),
+            'sslverify' => false
         ]);
-
+    
+        // Limpa os certificados temporários após a chamada
+        delete_option('pagstar_cert_crt_path');
+        delete_option('pagstar_cert_key_path');
+    
         if (is_wp_error($response)) {
             return [
-                'code' => $response->get_error_code(),
-                'message' => $response->get_error_message()
+                'code' => $response->get_error_code()
             ];
         }
 
