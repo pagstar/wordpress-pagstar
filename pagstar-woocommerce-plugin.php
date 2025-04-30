@@ -14,6 +14,7 @@
  * Requires PHP: 7.4
  * WC requires at least: 5.0
  * WC tested up to: 8.0
+ * HPOS: true
  */
 
 // Verificar se o WooCommerce está ativo
@@ -32,11 +33,35 @@ if (!is_plugin_active('woocommerce/woocommerce.php')) {
     return;
 }
 
+// Verificar versão do WooCommerce
+function pagstar_check_wc_version() {
+    if (!class_exists('WooCommerce')) {
+        return;
+    }
+
+    $wc_version = WC()->version;
+    $required_version = '5.0.0';
+
+    if (version_compare($wc_version, $required_version, '<')) {
+        add_action('admin_notices', 'pagstar_wc_version_notice');
+    }
+}
+
+function pagstar_wc_version_notice() {
+    echo '<div class="error"><p>O Plugin de Pagamento Pagstar requer WooCommerce versão 5.0.0 ou superior. Por favor, atualize o WooCommerce.</p></div>';
+}
+
+add_action('plugins_loaded', 'pagstar_check_wc_version');
+
 // Include the main class file after WooCommerce is loaded
-add_action('plugins_loaded', 'pagstar_init_gateway');
+add_action('plugins_loaded', 'pagstar_init_gateway', 0);
 
 function pagstar_init_gateway()
 {
+    if (!class_exists('WC_Payment_Gateway')) {
+        return;
+    }
+
     include_once(plugin_dir_path(__FILE__) . '/class-pagstar-gateway.php');
 }
 
@@ -45,6 +70,10 @@ require_once plugin_dir_path(__FILE__) . 'pagstar-api.php';
 // Adicione a opção de pagamento Pagstar ao WooCommerce
 function adicionar_gateway_fakepay($gateways)
 {
+    if (!class_exists('WC_Pagstar_Gateway')) {
+        return $gateways;
+    }
+    
     $gateways[] = 'WC_Pagstar_Gateway';
     return $gateways;
 }

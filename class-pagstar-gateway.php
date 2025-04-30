@@ -10,6 +10,9 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
   private $api;
 
+  /**
+   * Compatibilidade com HPOS (High-Performance Order Storage)
+   */
   public function __construct()
   {
     $this->api = new Pagstar_API();
@@ -27,23 +30,91 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     // Agora você tem a URL completa do arquivo api.php
     $this->urll = $api_url;
 
-
     $this->id = 'pagstar';
-    $this->method_title = 'Pagstar';
-    $this->method_description = 'Pagamento via Pagstar ';
-    $this->title = 'Pagstar';
-    $this->icon = plugins_url('pagstar_icon.png', __FILE__);
+    $this->icon = apply_filters('woocommerce_pagstar_icon', plugins_url('pagstar_icon.png', __FILE__));
     $this->has_fields = false;
+    $this->method_title = __('Pagstar', 'pagstar');
+    $this->method_description = __('Aceite pagamentos via PIX através da Pagstar.', 'pagstar');
+    $this->supports = array(
+      'products',
+      'refunds',
+      'tokenization',
+      'add_payment_method',
+      'subscriptions',
+      'subscription_cancellation',
+      'subscription_suspension',
+      'subscription_reactivation',
+      'subscription_amount_changes',
+      'subscription_date_changes',
+      'subscription_payment_method_change',
+      'subscription_payment_method_change_customer',
+      'subscription_payment_method_change_admin',
+      'multiple_subscriptions',
+      'pre-orders'
+    );
+
+    // Carregar configurações
     $this->init_form_fields();
     $this->init_settings();
+
+    // Definir variáveis
+    $this->title = $this->get_option('title');
+    $this->description = $this->get_option('description');
+    $this->instructions = $this->get_option('instructions');
+    $this->enabled = $this->get_option('enabled');
+
+    // Ações
     add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
     add_action('woocommerce_thankyou_' . $this->id, array($this, 'thankyou_page'));
+    add_action('woocommerce_api_' . $this->id, array($this, 'webhook'));
+    add_action('woocommerce_receipt_' . $this->id, array($this, 'receipt_page'));
     add_action('template_redirect', array($this, 'callback_handler'));
   }
 
   public function init_form_fields()
   {
-    $this->form_fields = array();
+    $this->form_fields = array(
+      'enabled' => array(
+        'title' => __('Ativar/Desativar', 'pagstar'),
+        'type' => 'checkbox',
+        'label' => __('Ativar Pagamento via PIX', 'pagstar'),
+        'default' => 'yes',
+        'description' => __('Habilite ou desabilite o método de pagamento PIX da Pagstar.', 'pagstar'),
+        'desc_tip' => true,
+      ),
+      'title' => array(
+        'title' => __('Título', 'pagstar'),
+        'type' => 'text',
+        'description' => __('Título que o cliente verá durante o checkout.', 'pagstar'),
+        'default' => __('PIX (Pagstar)', 'pagstar'),
+        'desc_tip' => true,
+        'class' => 'input-text regular-input',
+      ),
+      'description' => array(
+        'title' => __('Descrição', 'pagstar'),
+        'type' => 'textarea',
+        'description' => __('Descrição do método de pagamento que o cliente verá durante o checkout.', 'pagstar'),
+        'default' => __('Pague com PIX de forma rápida e segura através da Pagstar.', 'pagstar'),
+        'desc_tip' => true,
+        'css' => 'width: 400px; height: 75px;',
+      ),
+      'instructions' => array(
+        'title' => __('Instruções', 'pagstar'),
+        'type' => 'textarea',
+        'description' => __('Instruções que serão adicionadas à página de agradecimento e e-mails.', 'pagstar'),
+        'default' => __('Após o pagamento, seu pedido será processado automaticamente.', 'pagstar'),
+        'desc_tip' => true,
+        'css' => 'width: 400px; height: 75px;',
+      ),
+      'icon' => array(
+        'title' => __('Ícone', 'pagstar'),
+        'type' => 'text',
+        'description' => __('URL do ícone que será exibido durante o checkout.', 'pagstar'),
+        'default' => plugins_url('pagstar_icon.png', __FILE__),
+        'desc_tip' => true,
+        'class' => 'input-text regular-input',
+      ),
+    );
   }
 
   public function process_payment($order_id)
