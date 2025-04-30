@@ -1,0 +1,69 @@
+name: Atualização de Versão
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'pagstar-woocommerce-plugin.php'
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Git
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+
+      - name: Verificar alterações na versão
+        id: version
+        run: |
+          OLD_VERSION=$(grep "Version:" pagstar-woocommerce-plugin.php | sed 's/Version: //')
+          NEW_VERSION=$(git show HEAD:pagstar-woocommerce-plugin.php | grep "Version:" | sed 's/Version: //')
+          
+          if [ "$OLD_VERSION" != "$NEW_VERSION" ]; then
+            echo "::set-output name=changed::true"
+            echo "::set-output name=new_version::$NEW_VERSION"
+          else
+            echo "::set-output name=changed::false"
+          fi
+
+      - name: Atualizar CHANGELOG
+        if: steps.version.outputs.changed == 'true'
+        run: |
+          CURRENT_DATE=$(date +"%Y-%m-%d")
+          NEW_VERSION=${{ steps.version.outputs.new_version }}
+          
+          echo "## [$NEW_VERSION] - $CURRENT_DATE" > temp_changelog.md
+          echo "" >> temp_changelog.md
+          echo "### Adicionado" >> temp_changelog.md
+          echo "- " >> temp_changelog.md
+          echo "" >> temp_changelog.md
+          echo "### Melhorado" >> temp_changelog.md
+          echo "- " >> temp_changelog.md
+          echo "" >> temp_changelog.md
+          echo "### Corrigido" >> temp_changelog.md
+          echo "- " >> temp_changelog.md
+          echo "" >> temp_changelog.md
+          
+          cat CHANGELOG.md >> temp_changelog.md
+          mv temp_changelog.md CHANGELOG.md
+          
+          git add CHANGELOG.md
+          git commit -m "docs: atualiza CHANGELOG para versão $NEW_VERSION"
+          git push
+
+      - name: Criar Release
+        if: steps.version.outputs.changed == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "Versão ${{ steps.version.outputs.new_version }}"
+          tag_name: "v${{ steps.version.outputs.new_version }}"
+          body: "Nova versão do plugin Pagstar"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 

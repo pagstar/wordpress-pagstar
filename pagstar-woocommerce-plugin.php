@@ -588,3 +588,85 @@ function pagstar_settings_page()
     <?php
 }
 
+/**
+ * Obtém a versão atual do plugin
+ */
+function pagstar_get_version() {
+    $plugin_data = get_file_data(__FILE__, array('Version' => 'Version'));
+    return $plugin_data['Version'];
+}
+
+/**
+ * Atualiza a versão do plugin
+ */
+function pagstar_update_version($new_version) {
+    $plugin_file = __FILE__;
+    $plugin_data = file_get_contents($plugin_file);
+    
+    // Atualiza a versão no cabeçalho do plugin
+    $plugin_data = preg_replace(
+        '/Version:\s*[\d\.]+/',
+        'Version: ' . $new_version,
+        $plugin_data
+    );
+    
+    file_put_contents($plugin_file, $plugin_data);
+    
+    // Atualiza a versão nas opções do WordPress
+    update_option('pagstar_version', $new_version);
+}
+
+/**
+ * Atualiza o CHANGELOG.md com uma nova versão
+ */
+function pagstar_update_changelog($version, $changes) {
+    $changelog_file = plugin_dir_path(__FILE__) . 'CHANGELOG.md';
+    $current_content = file_get_contents($changelog_file);
+    
+    // Prepara o novo conteúdo
+    $date = date('Y-m-d');
+    $new_content = "## [$version] - $date\n\n";
+    
+    foreach ($changes as $type => $items) {
+        if (!empty($items)) {
+            $new_content .= "### $type\n";
+            foreach ($items as $item) {
+                $new_content .= "- $item\n";
+            }
+            $new_content .= "\n";
+        }
+    }
+    
+    // Insere o novo conteúdo após o cabeçalho
+    $new_content .= $current_content;
+    file_put_contents($changelog_file, $new_content);
+}
+
+/**
+ * Adiciona informações de versão na página de configurações
+ */
+function pagstar_add_version_info() {
+    $version = pagstar_get_version();
+    ?>
+    <div class="pagstar-version-info">
+        <p>Versão do Plugin: <strong><?php echo esc_html($version); ?></strong></p>
+        <p>Última atualização: <strong><?php echo esc_html(get_option('pagstar_last_update', 'N/A')); ?></strong></p>
+    </div>
+    <style>
+        .pagstar-version-info {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #2271b1;
+        }
+        .pagstar-version-info p {
+            margin: 5px 0;
+        }
+    </style>
+    <?php
+}
+
+// Adiciona o hook para exibir a versão na página de configurações
+add_action('pagstar_settings_before_form', 'pagstar_add_version_info');
+
