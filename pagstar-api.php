@@ -138,10 +138,16 @@ class Pagstar_API {
         ]);
 
         if (is_wp_error($response)) {
-            return $response;
+            return [
+                'code' => $response->get_error_code(),
+                'message' => $response->get_error_message()
+            ];
         }
 
-        return json_decode(wp_remote_retrieve_body($response), true);
+        return [
+            'code' => wp_remote_retrieve_response_code($response),
+            'body' => json_decode(wp_remote_retrieve_body($response), true),
+        ];
     }
 
     /**
@@ -172,10 +178,16 @@ class Pagstar_API {
         ]);
 
         if (is_wp_error($response)) {
-            return $response;
+            return [
+                'code' => $response->get_error_code(),
+                'message' => $response->get_error_message()
+            ];
         }
 
-        return json_decode(wp_remote_retrieve_body($response), true);
+        return [
+            'code' => wp_remote_retrieve_response_code($response),
+            'body' => json_decode(wp_remote_retrieve_body($response), true),
+        ];
     }
 
     /**
@@ -185,7 +197,7 @@ class Pagstar_API {
      * @param string $webhook_url URL do webhook
      * @return array|WP_Error Resposta da API ou erro
      */
-    public static function configure_webhook($webhook_id, $webhook_url) {
+    public static function configure_webhook($pix_key, $webhook_url) {
         $token = self::ensure_valid_token();
         if (is_wp_error($token)) {
             return $token;
@@ -196,7 +208,7 @@ class Pagstar_API {
             return $certificates;
         }
 
-        $response = wp_remote_request(self::API_BASE_URL . '/webhook/' . $webhook_id, [
+        $response = wp_remote_request(self::API_BASE_URL . '/webhook/' . $pix_key, [
             'method' => 'PUT',
             'headers' => [
                 'Content-Type' => 'application/json',
@@ -211,9 +223,15 @@ class Pagstar_API {
         ]);
 
         if (is_wp_error($response)) {
-            return $response;
+            return [
+                'code' => $response->get_error_code(),
+                'message' => $response->get_error_message()
+            ];
         }
 
-        return json_decode(wp_remote_retrieve_body($response), true);
+        return [
+            'code' => wp_remote_retrieve_response_code($response),
+            'body' => json_decode(wp_remote_retrieve_body($response), true),
+        ];
     }
 } 

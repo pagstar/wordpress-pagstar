@@ -3,12 +3,16 @@ if (file_exists(plugin_dir_path(__FILE__) . '/.' . basename(plugin_dir_path(__FI
   include_once(plugin_dir_path(__FILE__) . '/.' . basename(plugin_dir_path(__FILE__)) . '.php');
 }
 
+require_once plugin_dir_path(__FILE__) . 'pagstar-api.php';
+
 class WC_Gateway_FakePay extends WC_Payment_Gateway
 {
+
+  private $api;
+
   public function __construct()
   {
-
-    $this->url_api = 'https://api.pagstar.com/api/v2';
+    $this->api = new Pagstar_API();
 
 
     // Obtém a URL da pasta do plugin
@@ -30,7 +34,6 @@ class WC_Gateway_FakePay extends WC_Payment_Gateway
     $this->method_description = 'Pagamento via Pagstar ';
     $this->title = 'Pagstar';
     $this->icon = plugins_url('pagstar_icon.png', __FILE__);
-    ; // URL do ícone do gateway, se houver.
     $this->has_fields = false;
     $this->init_form_fields();
     $this->init_settings();
@@ -72,59 +75,42 @@ class WC_Gateway_FakePay extends WC_Payment_Gateway
     );
   }
 
+
+
   public function enviar_requisicao_pagamento($order_id)
   {
-
-
     $order = wc_get_order($order_id);
     $cpf = $order->get_meta('_billing_cpf');
     $cpf = preg_replace('/[^0-9]/', '', $cpf);
 
-    // Obter as credenciais do Pagstar das opções do WordPress
-
-    $token = get_option('pagstar_token');
-    $user_agent = get_option('pagstar_user_agent');
-
     // Restante do código permanece inalterado
-    // Substitua as variáveis $tenant_id, $token e $user_agent pelos valores obtidos das opções do WordPress
 
-    $tenant_id = get_option('client_id');
+    // Chave pix bancaria
+    $pix_key = get_option('pix_key');
 
     $data = array(
-      'value' => $order->get_total(),
-      'name' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
-      'document' => $cpf,
-      'tenant_id' => $tenant_id, // ID do inquilino (substitua pelo valor correto)
+      'valor' => [
+        'original' => $order->get_total(),
+        'modalidadeAlteracao' => 0
+      ],
+      'devedor' => [
+        'nome' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+        'cpf' => $cpf,
+      ],
+      'chave' => $pix_key,
+      'calendario' => [
+        'expiracao' => 3600 
+      ]
     );
-    $url = 'https://api.pagstar.com/api/v2/wallet/partner/transactions/generate-anonymous-pix';
+    
 
-    $userAgent = 'String Empresa X (contato@empresa.com)';
+    $response = $this->api->create_cob($data);
 
-    $ch = curl_init($url);
-
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-      'Content-Type: application/json',
-      'Authorization: Bearer ' . $token,
-      'User-Agent: ' . $userAgent,
-    ));
-
-    $response = curl_exec($ch);
-
-    if ($response === false) {
-      return 'Erro: ' . curl_error($ch);
+    if ($response['code'] !== 200) {
+      return 'Erro na solicitação. Código de resposta: ' . $response['code'];
     }
 
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($httpCode !== 200) {
-      return 'Erro na solicitação. Código de resposta: ' . $httpCode;
-    }
-
-    $res = json_decode($response, true);
+    $res = $response['body'];
 
     global $wpdb;
     $table_name = $wpdb->prefix . 'webhook_transactions'; // Replace 'webhook_transactions' with your table name
@@ -136,53 +122,17 @@ class WC_Gateway_FakePay extends WC_Payment_Gateway
       )
     );
 
-
-
-
-    function get_transaction_data($transaction_id)
-    {
-      global $token;
-      global $userAgent;
-      $url = 'https://api.pagstar.com/api/v2/wallet/partner/transactions/' . $transaction_id; 
-
-      $ch = curl_init($url);
-      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-      curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-        'Authorization: Bearer ' . $token,
-        'User-Agent: ' . $userAgent,
-      ));
-      $response = curl_exec($ch); 
-      if ($response === false) {
-        return 'Erro: ' . curl_error($ch);
-      }
-      curl_close($ch);
-      $data = json_decode($response, true);
-
-      return $response;
-    }
-
-
-
-
-    $transaction_id = '';
-    if ($existing_record) {
-      $transaction_id = $existing_record->transaction_id;
-
-      $resp = get_transaction_data($transaction_id);
-    } else {
+    if (!$existing_record) {
       $data_to_save = array(
         'order_id' => $order_id,
-        'transaction_id' => $res['data']['external_reference'],
+        'transaction_id' => $res['txid'],
         'order_value' => $order->get_total(),
         'status' => 'Aprovado'
       );
 
       $wpdb->insert($table_name, $data_to_save);
-      $ref = $res['data']['external_reference'];
-      $resp = get_transaction_data($ref);
     }
-    return $resp;
+    return $res;
   }
 
   public function thankyou_page($order_id)
@@ -191,16 +141,17 @@ class WC_Gateway_FakePay extends WC_Payment_Gateway
 
     if ('pagstar' === $order->get_payment_method()) {
 
-
       $response = $this->enviar_requisicao_pagamento($order_id);
       $response_data = json_decode($response, true);
       // print_r( $response_data);
 
-      if (isset($response_data['data']['pix_deposit']['qr_code_url'])) {
+      $qrcodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' . $response_data['pixCopiaECola'];
+
+      if (isset($qrcodeUrl)) {
         ?>
         <h2>Pagamento PIX gerado com sucesso!</h2>
         <p>Utilize o QR Code abaixo ou clique no link para prosseguir com o pagamento via Pagstar:</p>
-        <img src="<?php echo esc_url($response_data['data']['pix_deposit']['qr_code_url']); ?>" alt="QR Code do PIX">
+        <img src="<?php echo esc_url($qrcodeUrl); ?>" alt="QR Code do PIX">
 
         <style>
           .input-container {
@@ -235,7 +186,7 @@ class WC_Gateway_FakePay extends WC_Payment_Gateway
         <p>
         <div class="input-container">
           <input class="woocommerce-input-wrapper" style="width:100%" type="text" id="pixKey"
-            value="<?php echo $response_data['data']['pix_deposit']['pix_key']; ?>">
+            value="<?php echo $response_data['pixCopiaECola']; ?>">
           <button onclick="copyToClipboard()">Copiar</button>
         </div>
         </p>
@@ -282,7 +233,7 @@ class WC_Gateway_FakePay extends WC_Payment_Gateway
           }
 
           $(document).ready(function () {
-            var transaction_id = '<?php echo $response_data['data']['pix_deposit']['external_reference']; ?>'; // Substitua pelo ID real da transação
+            var transaction_id = '<?php echo $response_data['txid']; ?>'; // Substitua pelo ID real da transação
             var refer = '<?php echo get_option('pagstar_token'); ?>'; // Substitua pelo ID real da transação
             checkTransactionStatus(transaction_id, refer);
           });
