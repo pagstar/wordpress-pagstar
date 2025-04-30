@@ -31,7 +31,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     $this->urll = $api_url;
 
     $this->id = 'pagstar';
-    $this->icon = apply_filters('woocommerce_pagstar_icon', plugins_url('assets/images/pagstar_icon.png', dirname(__FILE__)));
+    $this->icon = apply_filters('woocommerce_pagstar_icon', plugins_url('pagstar_icon.png', __FILE__));
     $this->has_fields = false;
     $this->method_title = 'Pagstar';
     $this->method_description = 'Aceite pagamentos via PIX com a Pagstar';
@@ -72,6 +72,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     add_action('template_redirect', array($this, 'callback_handler'));
     add_action('woocommerce_admin_order_data_after_billing_address', array($this, 'display_admin_order_meta'), 10, 1);
     add_action('woocommerce_email_before_order_table', array($this, 'email_instructions'), 10, 3);
+    add_action('admin_enqueue_scripts', array($this, 'admin_scripts'));
   }
 
   public function init_form_fields()
@@ -121,6 +122,12 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       if (function_exists('wc_get_container')) {
         wc_get_container()->get(\Automattic\WooCommerce\Caching\Cache::class)->flush();
       }
+
+      // Forçar atualização da página
+      wp_send_json_success(array(
+        'enabled' => $enabled,
+        'message' => 'Status atualizado com sucesso'
+      ));
     }
     
     return $saved;
@@ -385,6 +392,16 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       if ($instructions) {
         echo wp_kses_post(wpautop(wptexturize($instructions)));
       }
+    }
+  }
+
+  public function admin_scripts() {
+    if (isset($_GET['section']) && $_GET['section'] === 'pagstar') {
+      wp_enqueue_script('pagstar-admin', plugins_url('assets/js/admin.js', dirname(__FILE__)), array('jquery'), '1.0.0', true);
+      wp_localize_script('pagstar-admin', 'pagstar_admin', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('pagstar_update_gateway_status')
+      ));
     }
   }
 }
