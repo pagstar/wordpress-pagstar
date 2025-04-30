@@ -146,11 +146,49 @@ function pagstar_admin_menu()
 
 add_action('admin_menu', 'pagstar_admin_menu');
 
-// Página de configurações do Pagstar
+// Função para backup automático de configurações
+function pagstar_backup_settings($settings) {
+    $backup_dir = WP_CONTENT_DIR . '/pagstar_backups/';
+    if (!file_exists($backup_dir)) {
+        mkdir($backup_dir, 0700, true);
+    }
+
+    $backup_file = $backup_dir . 'settings_backup_' . date('Y-m-d_H-i-s') . '.json';
+    $backup_data = array(
+        'timestamp' => current_time('mysql'),
+        'settings' => $settings
+    );
+
+    file_put_contents($backup_file, json_encode($backup_data, JSON_PRETTY_PRINT));
+    return $backup_file;
+}
+
+// Função para validar permissões de diretório
+function pagstar_validate_directory_permissions($dir) {
+    if (!is_writable($dir)) {
+        return new WP_Error('directory_not_writable', 'O diretório não tem permissões de escrita');
+    }
+    
+    $perms = substr(sprintf('%o', fileperms($dir)), -4);
+    if ($perms !== '0700') {
+        return new WP_Error('invalid_permissions', 'Permissões do diretório devem ser 0700');
+    }
+    
+    return true;
+}
+
+// Função para sanitizar nome de arquivo
+function pagstar_sanitize_filename($filename) {
+    $filename = sanitize_file_name($filename);
+    $filename = preg_replace('/[^a-zA-Z0-9._-]/', '', $filename);
+    return $filename;
+}
+
 function pagstar_settings_page()
 {
-    if (!current_user_can('manage_options')) {
-        return;
+    // Verificação de capacidade mais específica
+    if (!current_user_can('manage_woocommerce')) {
+        wp_die(__('Você não tem permissão para acessar esta página.', 'plugin-pagstar'));
     }
 
     // Adicionar estilos CSS
@@ -244,71 +282,97 @@ function pagstar_settings_page()
         }
 
         if ($success) {
-            update_option('client_id', sanitize_text_field($_POST['client_id']));
-            update_option('client_secret', sanitize_text_field($_POST['client_secret']));
-            update_option('pix_key', sanitize_text_field($_POST['pix_key']));
-            update_option('pagstar_user_agent', sanitize_text_field($_POST['user_agent']));
-            update_option('link_r', esc_url_raw($_POST['link_r']));
-            update_option('pagstar_payment_info', sanitize_textarea_field($_POST['payment_info']));
-            
-            // Validação do tempo de expiração
-            $expiration_time = intval($_POST['expiration_time']);
-            if ($expiration_time >= 300 && $expiration_time <= 86400) {
-                update_option('pagstar_expiration_time', $expiration_time);
-            } else {
-                $errors[] = 'Tempo de expiração inválido. Deve estar entre 300 e 86400 segundos.';
+            // Preparar configurações para backup
+            $settings = array(
+                'client_id' => sanitize_text_field($_POST['client_id']),
+                'client_secret' => sanitize_text_field($_POST['client_secret']),
+                'pix_key' => sanitize_text_field($_POST['pix_key']),
+                'user_agent' => sanitize_text_field($_POST['user_agent']),
+                'link_r' => esc_url_raw($_POST['link_r']),
+                'payment_info' => sanitize_textarea_field($_POST['payment_info']),
+                'expiration_time' => intval($_POST['expiration_time'])
+            );
+
+            // Fazer backup antes de atualizar
+            $backup_file = pagstar_backup_settings($settings);
+            if (is_wp_error($backup_file)) {
+                $errors[] = 'Erro ao criar backup das configurações';
                 $success = false;
             }
 
-            $upload_dir = ABSPATH . 'certificados_pagstar/';
-            if (!file_exists($upload_dir)) {
-                mkdir($upload_dir, 0700, true);
+            // Atualizar configurações
+            foreach ($settings as $key => $value) {
+                update_option('pagstar_' . $key, $value);
             }
 
+            $upload_dir = ABSPATH . 'certificados_pagstar/';
+            
+            // Verificar permissões do diretório
+            $dir_perms = pagstar_validate_directory_permissions($upload_dir);
+            if (is_wp_error($dir_perms)) {
+                $errors[] = $dir_perms->get_error_message();
+                $success = false;
+            }
+
+            // Inicializar finfo para validação de MIME
             $finfo = new finfo(FILEINFO_MIME_TYPE);
 
             // Upload CRT
             if (!empty($_FILES['pagstar_crt']['tmp_name'])) {
-                $file_info = pathinfo($_FILES['pagstar_crt']['name']);
-                if (strtolower($file_info['extension']) !== 'crt') {
-                    $errors[] = 'O arquivo CRT deve ter a extensão .crt';
+                // Validação de tamanho máximo (5KB)
+                if ($_FILES['pagstar_crt']['size'] > 5120) {
+                    $errors[] = 'O arquivo CRT excede o tamanho máximo permitido de 5KB';
                     $success = false;
                 } else {
-                    $mime = $finfo->file($_FILES['pagstar_crt']['tmp_name']);
-                    $allowed_crt_types = ['application/x-x509-ca-cert', 'application/pkix-cert', 'application/x-pem-file', 'text/plain'];
-                    if (in_array($mime, $allowed_crt_types)) {
-                        $crt_path = $upload_dir . 'certificado.crt';
-                        move_uploaded_file($_FILES['pagstar_crt']['tmp_name'], $crt_path);
-                        update_option('pagstar_crt', $crt_path);
-                    } else {
-                        $errors[] = 'Arquivo CRT inválido';
+                    $file_info = pathinfo($_FILES['pagstar_crt']['name']);
+                    if (strtolower($file_info['extension']) !== 'crt') {
+                        $errors[] = 'O arquivo CRT deve ter a extensão .crt';
                         $success = false;
+                    } else {
+                        $mime = $finfo->file($_FILES['pagstar_crt']['tmp_name']);
+                        $allowed_crt_types = ['application/x-x509-ca-cert', 'application/pkix-cert', 'application/x-pem-file', 'text/plain'];
+                        if (in_array($mime, $allowed_crt_types)) {
+                            $safe_filename = pagstar_sanitize_filename($_FILES['pagstar_crt']['name']);
+                            $crt_path = $upload_dir . $safe_filename;
+                            move_uploaded_file($_FILES['pagstar_crt']['tmp_name'], $crt_path);
+                            update_option('pagstar_crt', $crt_path);
+                        } else {
+                            $errors[] = 'Arquivo CRT inválido';
+                            $success = false;
+                        }
                     }
                 }
             }
 
             // Upload KEY
             if (!empty($_FILES['pagstar_key']['tmp_name'])) {
-                $file_info = pathinfo($_FILES['pagstar_key']['name']);
-                if (strtolower($file_info['extension']) !== 'key') {
-                    $errors[] = 'O arquivo KEY deve ter a extensão .key';
+                // Validação de tamanho máximo (5KB)
+                if ($_FILES['pagstar_key']['size'] > 5120) {
+                    $errors[] = 'O arquivo KEY excede o tamanho máximo permitido de 5KB';
                     $success = false;
                 } else {
-                    $mime = $finfo->file($_FILES['pagstar_key']['tmp_name']);
-                    $allowed_key_types = ['application/x-pem-file', 'text/plain'];
-                    if (in_array($mime, $allowed_key_types)) {
-                        $key_path = $upload_dir . 'chave.key';
-                        move_uploaded_file($_FILES['pagstar_key']['tmp_name'], $key_path);
-                        update_option('pagstar_key', $key_path);
-                    } else {
-                        $errors[] = 'Arquivo KEY inválido';
+                    $file_info = pathinfo($_FILES['pagstar_key']['name']);
+                    if (strtolower($file_info['extension']) !== 'key') {
+                        $errors[] = 'O arquivo KEY deve ter a extensão .key';
                         $success = false;
+                    } else {
+                        $mime = $finfo->file($_FILES['pagstar_key']['tmp_name']);
+                        $allowed_key_types = ['application/x-pem-file', 'text/plain'];
+                        if (in_array($mime, $allowed_key_types)) {
+                            $safe_filename = pagstar_sanitize_filename($_FILES['pagstar_key']['name']);
+                            $key_path = $upload_dir . $safe_filename;
+                            move_uploaded_file($_FILES['pagstar_key']['tmp_name'], $key_path);
+                            update_option('pagstar_key', $key_path);
+                        } else {
+                            $errors[] = 'Arquivo KEY inválido';
+                            $success = false;
+                        }
                     }
                 }
             }
 
             if ($success) {
-                echo '<div class="notice notice-success is-dismissible"><p>Configurações salvas com sucesso!</p></div>';
+                echo '<div class="notice notice-success is-dismissible"><p>Configurações salvas com sucesso! Backup criado em: ' . esc_html($backup_file) . '</p></div>';
             }
         }
 
