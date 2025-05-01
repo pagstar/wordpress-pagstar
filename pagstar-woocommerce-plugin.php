@@ -339,20 +339,25 @@ function pagstar_settings_page()
             background-color: #fff;
             color: #333;
             text-align: left;
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 16px 24px;
             position: fixed;
-            z-index: 9999;
+            z-index: 999999;
             right: 30px;
             top: 80px;
             font-size: 14px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
             border-left: 4px solid #2271b1;
             display: flex;
             flex-direction: column;
             gap: 8px;
             margin-top: 20px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transform: translateX(120%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
         .pagstar-toast .toast-header {
             display: flex;
             align-items: center;
@@ -360,46 +365,79 @@ function pagstar_settings_page()
             font-weight: 600;
             font-size: 15px;
         }
+
         .pagstar-toast .toast-body {
             color: #666;
             line-height: 1.4;
+            font-size: 14px;
         }
+
         .pagstar-toast.success {
             border-left-color: #4CAF50;
+            background-color: rgba(76, 175, 80, 0.1);
         }
+
         .pagstar-toast.error {
             border-left-color: #f44336;
+            background-color: rgba(244, 67, 54, 0.1);
         }
+
         .pagstar-toast.warning {
             border-left-color: #ff9800;
+            background-color: rgba(255, 152, 0, 0.1);
         }
+
         .pagstar-toast.info {
             border-left-color: #2196F3;
+            background-color: rgba(33, 150, 243, 0.1);
         }
+
         .pagstar-toast.show {
             visibility: visible;
-            animation: slideIn 0.3s ease-out, fadeOut 0.3s ease-in 4.5s;
+            transform: translateX(0);
         }
+
         .pagstar-toast .icon {
             font-size: 20px;
             width: 20px;
             height: 20px;
         }
+
         .pagstar-toast.success .icon {
             color: #4CAF50;
         }
+
         .pagstar-toast.error .icon {
             color: #f44336;
         }
+
         .pagstar-toast.warning .icon {
             color: #ff9800;
         }
+
         .pagstar-toast.info .icon {
             color: #2196F3;
         }
+
+        .pagstar-toast.success .title {
+            color: #4CAF50;
+        }
+
+        .pagstar-toast.error .title {
+            color: #f44336;
+        }
+
+        .pagstar-toast.warning .title {
+            color: #ff9800;
+        }
+
+        .pagstar-toast.info .title {
+            color: #2196F3;
+        }
+
         @keyframes slideIn {
             from {
-                transform: translateX(100%);
+                transform: translateX(120%);
                 opacity: 0;
             }
             to {
@@ -407,30 +445,16 @@ function pagstar_settings_page()
                 opacity: 1;
             }
         }
-        .pagstar-toast.show {
-            visibility: visible;
-            animation: slideIn 0.3s ease-out, fadeOut 0.3s ease-in 4.5s;
-        }
+
         @keyframes fadeOut {
             from {
+                transform: translateX(0);
                 opacity: 1;
             }
             to {
+                transform: translateX(120%);
                 opacity: 0;
             }
-        }
-
-        /* Estilos para o botão de ativar/desativar */
-        .pagstar-settings .form-table .checkbox {
-            margin-top: 0;
-        }
-        .pagstar-settings .form-table .checkbox label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .pagstar-settings .form-table .checkbox input[type="checkbox"] {
-            margin: 0;
         }
 
         /* Adicionei media query para responsividade */
@@ -446,20 +470,7 @@ function pagstar_settings_page()
 
     <script>
     jQuery(document).ready(function($) {
-        // Atualizar status dos certificados em tempo real
-        $('input[type="file"]').on('change', function() {
-            var input = $(this);
-            var status = input.closest('td').find('.cert-status');
-            var info = input.closest('td').find('.cert-info');
-            
-            if (input[0].files.length > 0) {
-                status.removeClass('cert-invalid').addClass('cert-valid');
-                status.text('Arquivo selecionado');
-                info.html('<span class="dashicons dashicons-yes"></span> ' + input[0].files[0].name);
-            }
-        });
-
-        // Melhorar o toast
+        // Função para mostrar toast
         function showToast(title, message, type) {
             var icon = '';
             switch(type) {
@@ -486,12 +497,18 @@ function pagstar_settings_page()
                 '</div>');
             
             $('body').append(toast);
+            
+            // Adiciona a classe show após um pequeno delay para garantir a animação
             setTimeout(function() {
                 toast.addClass('show');
             }, 100);
 
+            // Remove o toast após 5 segundos com animação
             setTimeout(function() {
-                toast.remove();
+                toast.removeClass('show');
+                setTimeout(function() {
+                    toast.remove();
+                }, 300);
             }, 5000);
         }
 
@@ -499,6 +516,7 @@ function pagstar_settings_page()
         $('input[name="enabled"]').on('change', function() {
             var checkbox = $(this);
             var value = checkbox.is(':checked') ? 'yes' : 'no';
+            
             $.ajax({
                 url: ajaxurl,
                 type: 'POST',
@@ -511,15 +529,46 @@ function pagstar_settings_page()
                     if (response.success) {
                         showToast('Sucesso', 'Status atualizado com sucesso', 'success');
                     } else {
-                        showToast('Erro', 'Erro ao atualizar status', 'error');
+                        showToast('Erro', response.data || 'Erro ao atualizar status', 'error');
                         checkbox.prop('checked', !checkbox.is(':checked'));
                     }
                 },
-                error: function() {
-                    showToast('Erro', 'Erro ao atualizar status', 'error');
+                error: function(xhr, status, error) {
+                    showToast('Erro', 'Erro ao atualizar status: ' + error, 'error');
                     checkbox.prop('checked', !checkbox.is(':checked'));
                 }
             });
+        });
+
+        // Tratamento de erros do formulário
+        $('form').on('submit', function(e) {
+            var form = $(this);
+            var submitButton = form.find('input[type="submit"]');
+            
+            submitButton.prop('disabled', true);
+            
+            $.ajax({
+                url: form.attr('action'),
+                type: 'POST',
+                data: new FormData(this),
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        showToast('Sucesso', 'Configurações salvas com sucesso', 'success');
+                    } else {
+                        showToast('Erro', response.data || 'Erro ao salvar configurações', 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    showToast('Erro', 'Erro ao salvar configurações: ' + error, 'error');
+                },
+                complete: function() {
+                    submitButton.prop('disabled', false);
+                }
+            });
+            
+            e.preventDefault();
         });
     });
     </script>
@@ -539,154 +588,50 @@ function pagstar_settings_page()
         $errors = [];
         $success = true;
 
-        // Validação dos campos
-        if (empty($_POST['client_id'])) {
-            $errors[] = 'Client ID é obrigatório';
-            $success = false;
-        }
-        if (empty($_POST['client_secret'])) {
-            $errors[] = 'Client Secret é obrigatório';
-            $success = false;
-        }
-        if (empty($_POST['pix_key'])) {
-            $errors[] = 'Chave PIX é obrigatória';
-            $success = false;
-        }
-        if (empty($_POST['link_r']) || !filter_var($_POST['link_r'], FILTER_VALIDATE_URL)) {
-            $errors[] = 'URL de redirecionamento inválida';
-            $success = false;
-        }
-        if (empty($_POST['webhook_url']) || !filter_var($_POST['webhook_url'], FILTER_VALIDATE_URL)) {
-            $errors[] = 'URL de webhook inválida';
-            $success = false;
-        }
-        if (empty($_POST['company_name'])) {
-            $errors[] = 'Nome da empresa é obrigatório';
-            $success = false;
-        }
-        if (empty($_POST['company_email']) || !filter_var($_POST['company_email'], FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Email da empresa é obrigatório e deve ser válido';
-            $success = false;
-        }
+        try {
+            // Validação dos campos
+            if (empty($_POST['client_id'])) {
+                throw new Exception('Client ID é obrigatório');
+            }
+            if (empty($_POST['client_secret'])) {
+                throw new Exception('Client Secret é obrigatório');
+            }
+            if (empty($_POST['pix_key'])) {
+                throw new Exception('Chave PIX é obrigatória');
+            }
+            if (empty($_POST['link_r']) || !filter_var($_POST['link_r'], FILTER_VALIDATE_URL)) {
+                throw new Exception('URL de redirecionamento inválida');
+            }
+            if (empty($_POST['webhook_url']) || !filter_var($_POST['webhook_url'], FILTER_VALIDATE_URL)) {
+                throw new Exception('URL de webhook inválida');
+            }
 
-        if ($success) {
-            // Preparar configurações para backup
+            // Preparar configurações
             $settings = array(
                 'pagstar_client_id' => sanitize_text_field($_POST['client_id']),
                 'pagstar_client_secret' => sanitize_text_field($_POST['client_secret']),
                 'pagstar_pix_key' => sanitize_text_field($_POST['pix_key']),
                 'pagstar_link_r' => esc_url_raw($_POST['link_r']),
-                'pagstar_webhook_url' => esc_url_raw($_POST['webhook_url']),
-                'pagstar_payment_info' => sanitize_textarea_field($_POST['payment_info']),
-                'pagstar_company_name' => sanitize_text_field($_POST['company_name']),
-                'pagstar_company_email' => sanitize_email($_POST['company_email']),
-                'pagstar_expiration_time' => intval($_POST['expiration_time'])
+                'pagstar_webhook_url' => esc_url_raw($_POST['webhook_url'])
             );
-
-            // Fazer backup antes de atualizar
-            $backup_file = pagstar_backup_settings($settings);
-            if (is_wp_error($backup_file)) {
-                $errors[] = 'Erro ao criar backup das configurações';
-                $success = false;
-            }
 
             // Atualizar configurações
             foreach ($settings as $key => $value) {
                 update_option($key, $value);
             }
 
-            $upload_dir = ABSPATH . 'certificados_pagstar/';
-            
-            // Verificar permissões do diretório
-            $dir_perms = pagstar_validate_directory_permissions($upload_dir);
-            if (is_wp_error($dir_perms)) {
-                $errors[] = $dir_perms->get_error_message();
-                $success = false;
-            }
-
-            // Upload CRT
-            if (!empty($_FILES['pagstar_crt']['tmp_name'])) {
-                $file_info = pathinfo($_FILES['pagstar_crt']['name']);
-                if (strtolower($file_info['extension']) !== 'crt') {
-                    $errors[] = 'O arquivo CRT deve ter a extensão .crt';
-                    $success = false;
-                } else {
-                    $safe_filename = pagstar_sanitize_filename($_FILES['pagstar_crt']['name']);
-                    $crt_path = $upload_dir . $safe_filename;
-                    if (move_uploaded_file($_FILES['pagstar_crt']['tmp_name'], $crt_path)) {
-                        chmod($crt_path, 0600);
-                        update_option('pagstar_crt', $crt_path);
-                        $crt_filename = $safe_filename;
-                        $crt_exists = true;
-                    } else {
-                        $errors[] = 'Erro ao mover o arquivo CRT';
-                        $success = false;
-                    }
-                }
-            }
-
-            // Upload KEY
-            if (!empty($_FILES['pagstar_key']['tmp_name'])) {
-                $file_info = pathinfo($_FILES['pagstar_key']['name']);
-                if (strtolower($file_info['extension']) !== 'key') {
-                    $errors[] = 'O arquivo KEY deve ter a extensão .key';
-                    $success = false;
-                } else {
-                    $safe_filename = pagstar_sanitize_filename($_FILES['pagstar_key']['name']);
-                    $key_path = $upload_dir . $safe_filename;
-                    if (move_uploaded_file($_FILES['pagstar_key']['tmp_name'], $key_path)) {
-                        chmod($key_path, 0600);
-                        update_option('pagstar_key', $key_path);
-                        $key_filename = $safe_filename;
-                        $key_exists = true;
-                    } else {
-                        $errors[] = 'Erro ao mover o arquivo KEY';
-                        $success = false;
-                    }
-                }
-            }
-
-            // Verificar se os arquivos existem
-            $crt_path = get_option('pagstar_crt');
-            $key_path = get_option('pagstar_key');
-
-            if ($crt_path && file_exists($crt_path)) {
-                $crt_exists = true;
-            }
-
-            if ($key_path && file_exists($key_path)) {
-                $key_exists = true;
-            }
-
-            if (isset($_POST['webhook_rate_limit'])) {
-                $webhook_rate_limit = intval($_POST['webhook_rate_limit']);
-                if ($webhook_rate_limit < 1 || $webhook_rate_limit > 20000) {
-                    $errors[] = 'O limite de requisições deve estar entre 1 e 20.000';
-                    $success = false;
-                } else {
-                    update_option('pagstar_webhook_rate_limit', $webhook_rate_limit);
-                }
-            }
-
+            // Configurar webhook
             $api = new Pagstar_API();
-
             $response = $api->configure_webhook($_POST['webhook_url']);
 
             if ($response['code'] !== 200) {
-                $errors[] = [
-                    'Erro na requisição com o sistema bancario, credenciais ou certificados invalidos',
-                    $response['code']
-                ];
-                $success = false;
+                throw new Exception('Erro na configuração do webhook: ' . ($response['message'] ?? 'Erro desconhecido'));
             }
 
-            if ($success) {
-                echo '<div class="pagstar-toast success show">Configurações salvas com sucesso!</div>';
-            }
-        }
+            wp_send_json_success('Configurações salvas com sucesso');
 
-        if (!empty($errors)) {
-            echo '<div class="pagstar-toast error show">' . implode('<br>', $errors) . '</div>';
+        } catch (Exception $e) {
+            wp_send_json_error($e->getMessage());
         }
     }
     ?>
