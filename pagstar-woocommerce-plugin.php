@@ -261,76 +261,40 @@ function pagstar_settings_page()
     // Adicionar estilos CSS
     ?>
     <style>
+        /* Reset e estilos base */
         .pagstar-settings {
             max-width: 800px;
             margin: 20px auto;
         }
+
         .pagstar-settings .form-table {
             background: #fff;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+
         .pagstar-settings .form-table th {
             width: 200px;
             padding: 15px 10px;
         }
+
         .pagstar-settings .form-table td {
             padding: 15px 10px;
         }
+
         .pagstar-settings input[type="text"] {
             width: 100%;
             max-width: 400px;
         }
+
         .pagstar-settings .section-title {
             background: #f8f9fa;
             padding: 15px;
             margin: 20px 0;
             border-left: 4px solid #2271b1;
         }
-        .pagstar-settings .cert-status {
-            display: inline-flex;
-            align-items: center;
-            padding: 6px 12px;
-            border-radius: 4px;
-            margin-left: 10px;
-            font-size: 13px;
-            transition: all 0.3s ease;
-        }
-        .cert-valid {
-            background: #e8f5e9;
-            color: #2e7d32;
-            border: 1px solid #c8e6c9;
-        }
-        .cert-invalid {
-            background: #ffebee;
-            color: #c62828;
-            border: 1px solid #ffcdd2;
-        }
-        .pagstar-settings .cert-info {
-            margin-top: 5px;
-            font-size: 12px;
-            color: #666;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .pagstar-settings .cert-info .dashicons {
-            font-size: 16px;
-            width: 16px;
-            height: 16px;
-        }
-        .pagstar-settings .help-text {
-            color: #666;
-            font-style: italic;
-            margin-top: 5px;
-            display: block;
-        }
-        .pagstar-settings .required-field::after {
-            content: "*";
-            color: #dc3545;
-            margin-left: 4px;
-        }
+
         /* Estilos do Toast/Snackbar moderno */
         .pagstar-toast {
             visibility: hidden;
@@ -403,38 +367,27 @@ function pagstar_settings_page()
             height: 20px;
         }
 
-        .pagstar-toast.success .icon {
-            color: #4CAF50;
-        }
-
-        .pagstar-toast.error .icon {
-            color: #f44336;
-        }
-
-        .pagstar-toast.warning .icon {
-            color: #ff9800;
-        }
-
-        .pagstar-toast.info .icon {
-            color: #2196F3;
-        }
-
+        .pagstar-toast.success .icon,
         .pagstar-toast.success .title {
             color: #4CAF50;
         }
 
+        .pagstar-toast.error .icon,
         .pagstar-toast.error .title {
             color: #f44336;
         }
 
+        .pagstar-toast.warning .icon,
         .pagstar-toast.warning .title {
             color: #ff9800;
         }
 
+        .pagstar-toast.info .icon,
         .pagstar-toast.info .title {
             color: #2196F3;
         }
 
+        /* Animações */
         @keyframes slideIn {
             from {
                 transform: translateX(120%);
@@ -457,7 +410,7 @@ function pagstar_settings_page()
             }
         }
 
-        /* Adicionei media query para responsividade */
+        /* Responsividade */
         @media screen and (max-width: 782px) {
             .pagstar-toast {
                 right: 20px;
@@ -498,12 +451,10 @@ function pagstar_settings_page()
             
             $('body').append(toast);
             
-            // Adiciona a classe show após um pequeno delay para garantir a animação
             setTimeout(function() {
                 toast.addClass('show');
             }, 100);
 
-            // Remove o toast após 5 segundos com animação
             setTimeout(function() {
                 toast.removeClass('show');
                 setTimeout(function() {
@@ -512,52 +463,27 @@ function pagstar_settings_page()
             }, 5000);
         }
 
-        // Atualizar o botão de ativar/desativar
-        $('input[name="enabled"]').on('change', function() {
-            var checkbox = $(this);
-            var value = checkbox.is(':checked') ? 'yes' : 'no';
-            
-            $.ajax({
-                url: ajaxurl,
-                type: 'POST',
-                data: {
-                    action: 'pagstar_update_gateway_status',
-                    enabled: value,
-                    nonce: '<?php echo wp_create_nonce("pagstar_update_gateway_status"); ?>'
-                },
-                success: function(response) {
-                    if (response.success) {
-                        showToast('Sucesso', 'Status atualizado com sucesso', 'success');
-                    } else {
-                        showToast('Erro', response.data || 'Erro ao atualizar status', 'error');
-                        checkbox.prop('checked', !checkbox.is(':checked'));
-                    }
-                },
-                error: function(xhr, status, error) {
-                    showToast('Erro', 'Erro ao atualizar status: ' + error, 'error');
-                    checkbox.prop('checked', !checkbox.is(':checked'));
-                }
-            });
-        });
-
-        // Tratamento de erros do formulário
+        // Tratamento do formulário
         $('form').on('submit', function(e) {
+            e.preventDefault();
+            
             var form = $(this);
             var submitButton = form.find('input[type="submit"]');
+            var formData = new FormData(this);
             
             submitButton.prop('disabled', true);
             
             $.ajax({
                 url: form.attr('action'),
                 type: 'POST',
-                data: new FormData(this),
+                data: formData,
                 processData: false,
                 contentType: false,
                 success: function(response) {
                     if (response.success) {
-                        showToast('Sucesso', 'Configurações salvas com sucesso', 'success');
+                        showToast('Sucesso', response.data, 'success');
                     } else {
-                        showToast('Erro', response.data || 'Erro ao salvar configurações', 'error');
+                        showToast('Erro', response.data, 'error');
                     }
                 },
                 error: function(xhr, status, error) {
@@ -567,8 +493,6 @@ function pagstar_settings_page()
                     submitButton.prop('disabled', false);
                 }
             });
-            
-            e.preventDefault();
         });
     });
     </script>
@@ -628,10 +552,18 @@ function pagstar_settings_page()
                 throw new Exception('Erro na configuração do webhook: ' . ($response['message'] ?? 'Erro desconhecido'));
             }
 
-            wp_send_json_success('Configurações salvas com sucesso');
+            if (wp_doing_ajax()) {
+                wp_send_json_success('Configurações salvas com sucesso');
+            } else {
+                echo '<div class="pagstar-toast success show">Configurações salvas com sucesso!</div>';
+            }
 
         } catch (Exception $e) {
-            wp_send_json_error($e->getMessage());
+            if (wp_doing_ajax()) {
+                wp_send_json_error($e->getMessage());
+            } else {
+                echo '<div class="pagstar-toast error show">' . esc_html($e->getMessage()) . '</div>';
+            }
         }
     }
     ?>
