@@ -439,6 +439,19 @@ function pagstar_settings_page()
             background-color: #f8d7da;
             color: #721c24;
         }
+
+        /* Estilo do botão de limpar */
+        #clear-pagstar-settings {
+            background-color: #dc3545 !important;
+            color: white !important;
+            border-color: #dc3545 !important;
+            margin-left: 10px;
+        }
+
+        #clear-pagstar-settings:hover {
+            background-color: #c82333 !important;
+            border-color: #bd2130 !important;
+        }
     </style>
 
     <script>
@@ -540,6 +553,12 @@ function pagstar_settings_page()
                 contentType: false,
                 success: function(response) {
                     try {
+                        // Verificar se a resposta é HTML
+                        if (response.trim().startsWith('<!DOCTYPE') || response.trim().startsWith('<html')) {
+                            showToast('Erro', 'Erro ao processar resposta do servidor: Resposta inválida', 'error');
+                            return;
+                        }
+
                         var data = typeof response === 'string' ? JSON.parse(response) : response;
                         if (data.success) {
                             showToast('Sucesso', data.data || 'Configurações salvas com sucesso', 'success');
@@ -555,7 +574,16 @@ function pagstar_settings_page()
                     }
                 },
                 error: function(xhr, status, error) {
-                    showToast('Erro', 'Erro ao salvar configurações: ' + error, 'error');
+                    var errorMessage = 'Erro ao salvar configurações';
+                    if (xhr.responseText) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            errorMessage = response.data || errorMessage;
+                        } catch (e) {
+                            errorMessage = xhr.responseText;
+                        }
+                    }
+                    showToast('Erro', errorMessage, 'error');
                 },
                 complete: function() {
                     submitButton.prop('disabled', false);
@@ -650,18 +678,11 @@ function pagstar_settings_page()
                 throw new Exception('Erro na configuração do webhook: ' . ($response['message'] ?? 'Erro desconhecido'));
             }
 
-            if (wp_doing_ajax()) {
-                wp_send_json_success('Configurações salvas com sucesso');
-            } else {
-                echo '<div class="pagstar-toast success show">Configurações salvas com sucesso!</div>';
-            }
+            // Sempre retornar JSON
+            wp_send_json_success('Configurações salvas com sucesso');
 
         } catch (Exception $e) {
-            if (wp_doing_ajax()) {
-                wp_send_json_error($e->getMessage());
-            } else {
-                echo '<div class="pagstar-toast error show">' . esc_html($e->getMessage()) . '</div>';
-            }
+            wp_send_json_error($e->getMessage());
         }
     }
     ?>
@@ -813,7 +834,7 @@ function pagstar_settings_page()
             </table>
 
             <?php submit_button('Salvar Configurações', 'primary', 'submit', true, array('id' => 'submit-pagstar-settings')); ?>
-            <button type="button" id="clear-pagstar-settings" class="button button-secondary">Limpar Configurações</button>
+            <button type="button" id="clear-pagstar-settings" class="button button-secondary" style="background-color: #dc3545; color: white; border-color: #dc3545; margin-left: 10px;">Limpar Configurações</button>
         </form>
     </div>
     <?php
