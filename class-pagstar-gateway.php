@@ -137,20 +137,21 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
   public function is_available()
   {
-    $is_available = parent::is_available();
+    return true;
+    // $is_available = parent::is_available();
     
-    if ($is_available) {
-      // Verificar se as credenciais estão configuradas
-      $client_id = get_option('pagstar_client_id');
-      $client_secret = get_option('pagstar_client_secret');
-      $pix_key = get_option('pagstar_pix_key');
+    // if ($is_available) {
+    //   // Verificar se as credenciais estão configuradas
+    //   $client_id = get_option('pagstar_client_id');
+    //   $client_secret = get_option('pagstar_client_secret');
+    //   $pix_key = get_option('pagstar_pix_key');
       
-      if (empty($client_id) || empty($client_secret) || empty($pix_key)) {
-        $is_available = false;
-      }
-    }
+    //   if (empty($client_id) || empty($client_secret) || empty($pix_key)) {
+    //     $is_available = false;
+    //   }
+    // }
     
-    return $is_available;
+    // return $is_available;
   }
 
   public function process_payment($order_id)
