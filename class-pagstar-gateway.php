@@ -123,11 +123,13 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
         wc_get_container()->get(\Automattic\WooCommerce\Caching\Cache::class)->flush();
       }
 
-      // Forçar atualização da página
-      wp_send_json_success(array(
-        'enabled' => $enabled,
-        'message' => 'Status atualizado com sucesso'
-      ));
+      // Verificar se é uma requisição AJAX
+      if (wp_doing_ajax()) {
+        wp_send_json_success(array(
+          'enabled' => $enabled,
+          'message' => 'Status atualizado com sucesso'
+        ));
+      }
     }
     
     return $saved;

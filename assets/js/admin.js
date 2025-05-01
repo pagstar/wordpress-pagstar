@@ -30,10 +30,10 @@ jQuery(document).ready(function($) {
                     showToast('Erro', 'Erro ao atualizar status', 'error');
                 }
             },
-            error: function() {
+            error: function(xhr, status, error) {
                 // Reverter o estado do checkbox
                 checkbox.prop('checked', !checkbox.is(':checked'));
-                showToast('Erro', 'Erro ao atualizar status', 'error');
+                showToast('Erro', 'Erro ao atualizar status: ' + error, 'error');
             }
         });
     });
