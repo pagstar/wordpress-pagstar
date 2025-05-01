@@ -181,7 +181,7 @@ class Pagstar_API {
             }
 
             return [
-                'code' => $http_code,
+                'code' => $http_code ?: 500,
                 'message' => $response_data['message'] ?? 'Requisição bem-sucedida',
                 'data' => $response_data
             ];
@@ -268,7 +268,8 @@ class Pagstar_API {
                 throw new Exception($response['message'] ?? 'Erro ao configurar webhook');
             }
 
-            $this->show_success_toast('Webhook Configurado', 'Webhook configurado com sucesso');
+            // $this->show_success_toast('Webhook Configurado', 'Webhook configurado com sucesso');
+            $this->show_success_toast('Webhook Configurado', $response['code']);
             return $response;
         } catch (Exception $e) {
             $this->show_error_toast('Erro na Configuração', $e->getMessage());
