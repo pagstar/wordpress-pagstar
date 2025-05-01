@@ -522,9 +522,9 @@ function pagstar_settings_page()
                       window.location.href.includes('_wpnonce=') ||
                       window.location.href.includes('pagstar_nonce=');
 
-        if (!isSubmit && (hasClientId || hasClientSecret || hasPixKey || hasLinkR || hasWebhookUrl)) {
-            showToast('Sucesso', 'Configurações carregadas com sucesso', 'success');
-        }
+        //if (!isSubmit && (hasClientId || hasClientSecret || hasPixKey || hasLinkR || hasWebhookUrl)) {
+        //    showToast('Sucesso', 'Configurações carregadas com sucesso', 'success');
+        //}
 
         // Tratamento do formulário
         $('form').on('submit', function(e) {
