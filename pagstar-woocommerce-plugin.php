@@ -547,8 +547,15 @@ function pagstar_settings_page()
                         }
 
                         var data = typeof response === 'string' ? JSON.parse(response) : response;
+                        
+                        // Verificar se houve erro na configuração do webhook
+                        if (data.success && data.webhook_error) {
+                            showToast('Erro', 'Erro ao configurar webhook: ' + data.webhook_error, 'error');
+                            return;
+                        }
+
                         if (data.success) {
-                            showToast('Sucesso', data.data || 'Configurações salvas com sucesso', 'success');
+                            showToast('Sucesso', 'Configurações salvas com sucesso', 'success');
                             // Recarregar a página após 2 segundos
                             setTimeout(function() {
                                 window.location.href = window.location.href.split('?')[0];
@@ -659,10 +666,13 @@ function pagstar_settings_page()
 
             // Configurar webhook
             $api = new Pagstar_API();
-            $response = $api->configure_webhook($_POST['webhook_url']);
+            $webhook_response = $api->configure_webhook($_POST['webhook_url']);
 
-            if ($response['code'] !== 200) {
-                wp_send_json_error($response['message']);
+            if ($webhook_response['code'] !== 200) {
+                wp_send_json_success(array(
+                    'success' => true,
+                    'webhook_error' => $webhook_response['message']
+                ));
                 exit;
             }
 
