@@ -14,236 +14,170 @@ if (!defined('ABSPATH')) {
  * Classe para interagir com a API da Pagstar
  */
 class Pagstar_API {
-    /**
-     * URL base da API
-     */
-    private const API_BASE_URL = 'https://api.pix.pagstar.com';
+    private $client_id;
+    private $client_secret;
+    private $base_url = 'https://api.pagstar.com.br/v1';
+    private $crt_path;
+    private $key_path;
 
-    /**
-     * Obtém os certificados MTLS
-     *
-     * @return array|WP_Error Array com os caminhos dos certificados ou erro
-     */
-    private static function get_certificates() {
-        $crt_path = get_option('pagstar_crt');
-        $key_path = get_option('pagstar_key');
-
-        if (empty($crt_path) || empty($key_path)) {
-            return new WP_Error('missing_certificates', 'Certificados MTLS não configurados');
-        }
-
-        if (!file_exists($crt_path) || !file_exists($key_path)) {
-            return new WP_Error('certificates_not_found', 'Arquivos de certificado não encontrados');
-        }
-
-        update_option('pagstar_cert_crt_path', $crt_path, false);
-        update_option('pagstar_cert_key_path', $key_path, false);
-
-        return [
-            'crt' => $crt_path,
-            'key' => $key_path
-        ];
+    public function __construct() {
+        $this->client_id = get_option('pagstar_client_id');
+        $this->client_secret = get_option('pagstar_client_secret');
+        $this->crt_path = get_option('pagstar_crt');
+        $this->key_path = get_option('pagstar_key');
     }
 
-    /**
-     * Obtém o token de acesso da API
-     *
-     * @return string|WP_Error Token de acesso ou erro
-     */
-    public static function get_access_token() {
-        // Tenta obter o token do cache
-        $cached_token = get_transient('pagstar_access_token');
-        if ($cached_token !== false) {
-            return $cached_token;
-        }
-
-        $client_id = get_option('pagstar_client_id');
-        $client_secret = get_option('pagstar_client_secret');
-        $certificates = self::get_certificates();
-
-        if (is_wp_error($certificates)) {
-            return $certificates;
-        }
-
-        if (empty($client_id) || empty($client_secret)) {
-            return new WP_Error('missing_credentials', 'Credenciais da API não configuradas');
-        }
-
-        $response = wp_remote_post(self::API_BASE_URL . '/oauth/token', [
-            'headers' => [
+    private function make_request($endpoint, $method = 'GET', $data = null) {
+        $url = $this->base_url . $endpoint;
+        $args = array(
+            'method' => $method,
+            'headers' => array(
                 'Content-Type' => 'application/json',
-            ],
-            'body' => json_encode([
-                'grant_type' => 'client_credentials',
-                'client_id' => $client_id,
-                'client_secret' => $client_secret,
-            ]),
-            'sslverify' => false
-        ]);
+                'Authorization' => 'Basic ' . base64_encode($this->client_id . ':' . $this->client_secret)
+            ),
+            'timeout' => 30,
+            'sslverify' => true
+        );
 
-        // Limpa os certificados temporários após a chamada
-        delete_option('pagstar_cert_crt_path');
-        delete_option('pagstar_cert_key_path');
+        if ($data) {
+            $args['body'] = json_encode($data);
+        }
+
+        // Adicionar certificados se existirem
+        if ($this->crt_path && file_exists($this->crt_path)) {
+            $args['sslcert'] = $this->crt_path;
+        }
+        if ($this->key_path && file_exists($this->key_path)) {
+            $args['sslkey'] = $this->key_path;
+        }
+
+        $response = wp_remote_request($url, $args);
 
         if (is_wp_error($response)) {
+            $error_message = $response->get_error_message();
+            $this->show_error_toast('Erro na requisição', $error_message);
+            return array(
+                'code' => 500,
+                'message' => $error_message,
+                'data' => null
+            );
+        }
+
+        $response_code = wp_remote_retrieve_response_code($response);
+        $response_body = wp_remote_retrieve_body($response);
+        $response_data = json_decode($response_body, true);
+
+        if ($response_code >= 400) {
+            $error_message = isset($response_data['message']) ? $response_data['message'] : 'Erro desconhecido';
+            $this->show_error_toast('Erro na API', $error_message);
+        }
+
+        return array(
+            'code' => $response_code,
+            'message' => isset($response_data['message']) ? $response_data['message'] : '',
+            'data' => $response_data
+        );
+    }
+
+    private function show_error_toast($title, $message) {
+        add_action('admin_footer', function() use ($title, $message) {
+            ?>
+            <script>
+            jQuery(document).ready(function($) {
+                showToast('<?php echo esc_js($title); ?>', '<?php echo esc_js($message); ?>', 'error');
+            });
+            </script>
+            <?php
+        });
+    }
+
+    private function show_success_toast($title, $message) {
+        add_action('admin_footer', function() use ($title, $message) {
+            ?>
+            <script>
+            jQuery(document).ready(function($) {
+                showToast('<?php echo esc_js($title); ?>', '<?php echo esc_js($message); ?>', 'success');
+            });
+            </script>
+            <?php
+        });
+    }
+
+    public function configure_webhook($webhook_url) {
+        try {
+            $response = $this->make_request('/webhooks', 'POST', array(
+                'url' => $webhook_url,
+                'events' => array('payment.created', 'payment.updated')
+            ));
+
+            if ($response['code'] === 200) {
+                $this->show_success_toast('Webhook Configurado', 'Webhook configurado com sucesso');
+            }
+
             return $response;
+        } catch (Exception $e) {
+            $this->show_error_toast('Erro na Configuração', $e->getMessage());
+            return array(
+                'code' => 500,
+                'message' => $e->getMessage(),
+                'data' => null
+            );
         }
-
-        $body = json_decode(wp_remote_retrieve_body($response), true);
-
-        if (empty($body['access_token'])) {
-            return new WP_Error('invalid_response', 'Resposta inválida da API');
-        }
-
-        // Armazena o token no cache por 4 minutos
-        set_transient('pagstar_access_token', $body['access_token'], 4 * MINUTE_IN_SECONDS);
-
-        return $body['access_token'];
     }
 
-    /**
-     * Verifica se o token está válido e obtém um novo se necessário
-     *
-     * @return string|WP_Error Token de acesso ou erro
-     */
-    private static function ensure_valid_token() {
-        $token = get_transient('pagstar_access_token');
-        if ($token === false) {
-            return self::get_access_token();
+    public function create_payment($order_id, $amount, $pix_key) {
+        try {
+            $response = $this->make_request('/payments', 'POST', array(
+                'order_id' => $order_id,
+                'amount' => $amount,
+                'pix_key' => $pix_key,
+                'payment_method' => 'pix'
+            ));
+
+            if ($response['code'] === 200) {
+                $this->show_success_toast('Pagamento Criado', 'Pagamento criado com sucesso');
+            }
+
+            return $response;
+        } catch (Exception $e) {
+            $this->show_error_toast('Erro no Pagamento', $e->getMessage());
+            return array(
+                'code' => 500,
+                'message' => $e->getMessage(),
+                'data' => null
+            );
         }
-        return $token;
     }
 
-    /**
-     * Cria uma cobrança PIX
-     *
-     * @param array $data Dados da cobrança
-     * @return array|WP_Error Dados da cobrança ou erro
-     */
-    public static function create_cob($data) {
-        $token = self::ensure_valid_token();
-        if (is_wp_error($token)) {
-            return $token;
+    public function get_payment_status($payment_id) {
+        try {
+            $response = $this->make_request('/payments/' . $payment_id);
+
+            if ($response['code'] === 200) {
+                return $response['data'];
+            }
+
+            return null;
+        } catch (Exception $e) {
+            $this->show_error_toast('Erro na Consulta', $e->getMessage());
+            return null;
         }
-
-        $certificates = self::get_certificates();
-        if (is_wp_error($certificates)) {
-            return $certificates;
-        }
-
-        $response = wp_remote_post(self::API_BASE_URL . '/cob', [
-            'headers' => [
-                'Content-Type' => 'application/json',
-                'Authorization' => 'Bearer ' . $token,
-            ],
-            'body' => json_encode($data),
-            'sslverify' => false
-        ]);
-
-        // Limpa os certificados temporários após a chamada
-        delete_option('pagstar_cert_crt_path');
-        delete_option('pagstar_cert_key_path');
-
-        if (is_wp_error($response)) {
-            return [
-                'code' => $response->get_error_code(),
-                'message' => $response->get_error_message()
-            ];
-        }
-
-        return [
-            'code' => wp_remote_retrieve_response_code($response),
-            'body' => json_decode(wp_remote_retrieve_body($response), true),
-        ];
     }
 
-    /**
-     * Consulta uma cobrança PIX
-     *
-     * @param string $txid ID da transação
-     * @return array|WP_Error Dados da cobrança ou erro
-     */
-    public static function get_cob($txid) {
-        $token = self::ensure_valid_token();
-        if (is_wp_error($token)) {
-            return $token;
+    public function validate_credentials() {
+        try {
+            $response = $this->make_request('/auth/validate');
+
+            if ($response['code'] === 200) {
+                $this->show_success_toast('Credenciais Válidas', 'Credenciais validadas com sucesso');
+                return true;
+            }
+
+            $this->show_error_toast('Credenciais Inválidas', 'Verifique suas credenciais');
+            return false;
+        } catch (Exception $e) {
+            $this->show_error_toast('Erro na Validação', $e->getMessage());
+            return false;
         }
-
-        $certificates = self::get_certificates();
-        if (is_wp_error($certificates)) {
-            return $certificates;
-        }
-
-        $response = wp_remote_get(self::API_BASE_URL . '/cob/' . $txid, [
-            'headers' => [
-                'Content-Type' => 'application/json',
-                'Authorization' => 'Bearer ' . $token,
-            ],
-            'sslverify' => false
-        ]);
-
-        // Limpa os certificados temporários após a chamada
-        delete_option('pagstar_cert_crt_path');
-        delete_option('pagstar_cert_key_path');
-
-        if (is_wp_error($response)) {
-            return [
-                'code' => $response->get_error_code(),
-                'message' => $response->get_error_message()
-            ];
-        }
-
-        return [
-            'code' => wp_remote_retrieve_response_code($response),
-            'body' => json_decode(wp_remote_retrieve_body($response), true),
-        ];
-    }
-
-    /**
-     * Configura o webhook
-     *
-     * @param string $webhook_id ID do webhook
-     * @param string $webhook_url URL do webhook
-     * @return array|WP_Error Resposta da API ou erro
-     */
-    public static function configure_webhook($webhook_url) {
-        $token = self::ensure_valid_token();
-        if (is_wp_error($token)) {
-            return $token;
-        }
-    
-        $certificates = self::get_certificates();
-        if (is_wp_error($certificates)) {
-            return $certificates;
-        }
-    
-        // Armazena os caminhos dos certificados em uma opção temporária para o hook usar
-    
-        $pix_key = get_option('pagstar_pix_key');
-    
-        $response = wp_remote_request(self::API_BASE_URL . '/webhook/' . $pix_key, [
-            'method' => 'PUT',
-            'headers' => [
-                'Content-Type' => 'application/json',
-                'Authorization' => 'Bearer ' . $token,
-            ],
-            'body'      => json_encode(['webhookUrl' => $webhook_url]),
-            'sslverify' => false
-        ]);
-    
-        // Limpa os certificados temporários após a chamada
-        delete_option('pagstar_cert_crt_path');
-        delete_option('pagstar_cert_key_path');
-    
-        if (is_wp_error($response)) {
-            return [
-                'code' => $response->get_error_code()
-            ];
-        }
-
-        return [
-            'code' => wp_remote_retrieve_response_code($response),
-            'body' => json_decode(wp_remote_retrieve_body($response), true),
-        ];
     }
 } 
