@@ -6,8 +6,8 @@
  * Version: 1.0.4
  * Author: Pagstar
  * Author URI: https://pagstar.com.br
- * License: Licença de Software Livre Pagstar
- * License URI: https://pagstar.com.br/licenca
+ * License: GPLv2
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: pagstar
  * Domain Path: /languages
  * Requires at least: 5.0
@@ -283,9 +283,22 @@ function pagstar_settings_page()
             padding: 15px 10px;
         }
 
-        .pagstar-settings input[type="text"] {
+        .pagstar-settings input[type="text"],
+        .pagstar-settings input[type="url"],
+        .pagstar-settings input[type="email"],
+        .pagstar-settings input[type="number"],
+        .pagstar-settings textarea {
             width: 100%;
             max-width: 400px;
+            margin-bottom: 5px;
+        }
+
+        .pagstar-settings .help-text {
+            display: block;
+            color: #666;
+            font-size: 12px;
+            margin-top: 5px;
+            line-height: 1.4;
         }
 
         .pagstar-settings .section-title {
@@ -423,21 +436,31 @@ function pagstar_settings_page()
         /* Estilos do status dos certificados */
         .cert-status {
             display: inline-block;
-            padding: 4px 8px;
-            border-radius: 3px;
+            padding: 6px 12px;
+            border-radius: 20px;
             font-size: 13px;
             font-weight: 500;
             margin: 4px 0;
+            text-align: center;
+            min-width: 120px;
         }
 
         .cert-status.valid {
             background-color: #e6f4ea;
             color: #1e7e34;
+            border: 1px solid #1e7e34;
         }
 
         .cert-status.invalid {
             background-color: #f8d7da;
             color: #721c24;
+            border: 1px solid #721c24;
+        }
+
+        .cert-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
         }
 
         /* Estilo do grupo de botões */
@@ -767,6 +790,17 @@ function pagstar_settings_page()
                     <th><label for="pagstar_crt">Certificado CRT:</label></th>
                     <td>
                         <input type="file" name="pagstar_crt" id="pagstar_crt" accept=".crt">
+                        <?php
+                        // Verificar status dos certificados
+                        $crt_path = get_option('pagstar_cert_crt_path');
+                        $key_path = get_option('pagstar_cert_key_path');
+                        
+                        $crt_exists = !empty($crt_path) && file_exists($crt_path);
+                        $key_exists = !empty($key_path) && file_exists($key_path);
+                        
+                        $crt_filename = $crt_exists ? basename($crt_path) : '';
+                        $key_filename = $key_exists ? basename($key_path) : '';
+                        ?>
                         <?php if ($crt_exists): ?>
                             <span class="cert-status cert-valid">Certificado instalado</span>
                             <div class="cert-info">Arquivo: <?php echo esc_html($crt_filename); ?></div>
