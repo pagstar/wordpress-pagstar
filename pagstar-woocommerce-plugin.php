@@ -3,7 +3,7 @@
  * Plugin Name: Pagstar
  * Plugin URI: https://pagstar.com.br
  * Description: Plugin de integração com a Pagstar para WordPress
- * Version: 1.0.3
+ * Version: 1.0.4
  * Author: Pagstar
  * Author URI: https://pagstar.com.br
  * License: Licença de Software Livre Pagstar
@@ -518,7 +518,11 @@ function pagstar_settings_page()
         var hasWebhookUrl = $('#webhook_url').val().length > 0;
 
         // Só mostrar toast de carregamento se não for uma submissão de formulário
-        if (!window.location.href.includes('action=submit') && (hasClientId || hasClientSecret || hasPixKey || hasLinkR || hasWebhookUrl)) {
+        var isSubmit = window.location.href.includes('action=submit') || 
+                      window.location.href.includes('_wpnonce=') ||
+                      window.location.href.includes('pagstar_nonce=');
+
+        if (!isSubmit && (hasClientId || hasClientSecret || hasPixKey || hasLinkR || hasWebhookUrl)) {
             showToast('Sucesso', 'Configurações carregadas com sucesso', 'success');
         }
 
