@@ -54,13 +54,17 @@ class Pagstar_API {
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+        curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
 
         // Configurar certificados MTLS
         if ($this->cert_path && file_exists($this->cert_path)) {
             curl_setopt($ch, CURLOPT_SSLCERT, $this->cert_path);
+            curl_setopt($ch, CURLOPT_SSLCERTTYPE, 'PEM');
         }
         if ($this->key_path && file_exists($this->key_path)) {
             curl_setopt($ch, CURLOPT_SSLKEY, $this->key_path);
+            curl_setopt($ch, CURLOPT_SSLKEYTYPE, 'PEM');
         }
 
         // Configurar headers

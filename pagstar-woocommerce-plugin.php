@@ -469,6 +469,9 @@ function pagstar_settings_page()
     jQuery(document).ready(function($) {
         // Função para mostrar toast
         function showToast(title, message, type) {
+            // Remover toasts existentes
+            $('.pagstar-toast').remove();
+            
             var icon = '';
             switch(type) {
                 case 'success':
@@ -514,37 +517,10 @@ function pagstar_settings_page()
         var hasLinkR = $('#link_r').val().length > 0;
         var hasWebhookUrl = $('#webhook_url').val().length > 0;
 
-        if (hasClientId || hasClientSecret || hasPixKey || hasLinkR || hasWebhookUrl) {
+        // Só mostrar toast de carregamento se não for uma submissão de formulário
+        if (!window.location.href.includes('action=submit') && (hasClientId || hasClientSecret || hasPixKey || hasLinkR || hasWebhookUrl)) {
             showToast('Sucesso', 'Configurações carregadas com sucesso', 'success');
         }
-
-        // Atualizar o botão de ativar/desativar
-        $('input[name="woocommerce_pagstar_enabled"]').on('change', function() {
-            var checkbox = $(this);
-            var value = checkbox.is(':checked') ? 'yes' : 'no';
-            
-            $.ajax({
-                url: ajaxurl,
-                type: 'POST',
-                data: {
-                    action: 'pagstar_update_gateway_status',
-                    enabled: value,
-                    nonce: '<?php echo wp_create_nonce("pagstar_update_gateway_status"); ?>'
-                },
-                success: function(response) {
-                    if (response.success) {
-                        showToast('Sucesso', 'Status atualizado com sucesso', 'success');
-                    } else {
-                        showToast('Erro', response.data || 'Erro ao atualizar status', 'error');
-                        checkbox.prop('checked', !checkbox.is(':checked'));
-                    }
-                },
-                error: function(xhr, status, error) {
-                    showToast('Erro', 'Erro ao atualizar status: ' + error, 'error');
-                    checkbox.prop('checked', !checkbox.is(':checked'));
-                }
-            });
-        });
 
         // Tratamento do formulário
         $('form').on('submit', function(e) {
@@ -575,7 +551,7 @@ function pagstar_settings_page()
                             showToast('Sucesso', data.data || 'Configurações salvas com sucesso', 'success');
                             // Recarregar a página após 2 segundos
                             setTimeout(function() {
-                                window.location.reload();
+                                window.location.href = window.location.href.split('?')[0];
                             }, 2000);
                         } else {
                             showToast('Erro', data.data || 'Erro ao salvar configurações', 'error');
