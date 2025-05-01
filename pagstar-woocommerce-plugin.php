@@ -23,6 +23,7 @@
 add_action('before_woocommerce_init', function() {
     if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
         \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('cart_checkout_blocks', __FILE__, true);
     }
 });
 
@@ -49,7 +50,7 @@ function pagstar_check_wc_version() {
     }
 
     $wc_version = WC()->version;
-    $required_version = '5.0.0';
+    $required_version = '8.0.0';
 
     if (version_compare($wc_version, $required_version, '<')) {
         add_action('admin_notices', 'pagstar_wc_version_notice');
@@ -57,7 +58,7 @@ function pagstar_check_wc_version() {
 }
 
 function pagstar_wc_version_notice() {
-    echo '<div class="error"><p>O Plugin de Pagamento Pagstar requer WooCommerce versão 5.0.0 ou superior. Por favor, atualize o WooCommerce.</p></div>';
+    echo '<div class="error"><p>O Plugin de Pagamento Pagstar requer WooCommerce versão 8.0.0 ou superior. Por favor, atualize o WooCommerce.</p></div>';
 }
 
 add_action('plugins_loaded', 'pagstar_check_wc_version');
@@ -179,7 +180,7 @@ function pagstar_admin_menu()
         'woocommerce',
         'Configurações do Pagstar',
         'Pagstar',
-        'manage_options',
+        'manage_woocommerce',
         'pagstar-settings',
         'pagstar_settings_page'
     );
@@ -936,9 +937,16 @@ function pagstar_update_gateway_status() {
         wp_send_json_error('Permissão negada');
     }
 
-    $enabled = sanitize_text_field($_POST['enabled']);
+    $enabled = sanitize_text_field($_POST['enabled'] ?? 'no');
     update_option('woocommerce_pagstar_settings', array('enabled' => $enabled));
     
     wp_send_json_success();
 }
+
+// Adicionar hook para limpar cache após atualização de configurações
+add_action('update_option_woocommerce_pagstar_settings', function($old_value, $new_value) {
+    if (function_exists('wc_get_container')) {
+        wc_get_container()->get(\Automattic\WooCommerce\Caching\Cache::class)->flush();
+    }
+}, 10, 2);
 
