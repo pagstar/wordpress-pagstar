@@ -419,6 +419,26 @@ function pagstar_settings_page()
                 max-width: calc(100% - 40px);
             }
         }
+
+        /* Estilos do status dos certificados */
+        .cert-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 13px;
+            font-weight: 500;
+            margin: 4px 0;
+        }
+
+        .cert-status.valid {
+            background-color: #e6f4ea;
+            color: #1e7e34;
+        }
+
+        .cert-status.invalid {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
     </style>
 
     <script>
@@ -461,6 +481,17 @@ function pagstar_settings_page()
                     toast.remove();
                 }, 300);
             }, 5000);
+        }
+
+        // Verificar se há informações carregadas
+        var hasClientId = $('#client_id').val().length > 0;
+        var hasClientSecret = $('#client_secret').val().length > 0;
+        var hasPixKey = $('#pix_key').val().length > 0;
+        var hasLinkR = $('#link_r').val().length > 0;
+        var hasWebhookUrl = $('#webhook_url').val().length > 0;
+
+        if (hasClientId || hasClientSecret || hasPixKey || hasLinkR || hasWebhookUrl) {
+            showToast('Sucesso', 'Configurações carregadas com sucesso', 'success');
         }
 
         // Atualizar o botão de ativar/desativar
@@ -512,11 +543,15 @@ function pagstar_settings_page()
                         var data = typeof response === 'string' ? JSON.parse(response) : response;
                         if (data.success) {
                             showToast('Sucesso', data.data || 'Configurações salvas com sucesso', 'success');
+                            // Recarregar a página após 2 segundos
+                            setTimeout(function() {
+                                window.location.reload();
+                            }, 2000);
                         } else {
                             showToast('Erro', data.data || 'Erro ao salvar configurações', 'error');
                         }
                     } catch (e) {
-                        showToast('Erro', 'Erro ao processar resposta do servidor', 'error');
+                        showToast('Erro', 'Erro ao processar resposta do servidor: ' + e.message, 'error');
                     }
                 },
                 error: function(xhr, status, error) {
@@ -526,6 +561,36 @@ function pagstar_settings_page()
                     submitButton.prop('disabled', false);
                 }
             });
+        });
+
+        // Botão para limpar configurações
+        $('#clear-pagstar-settings').on('click', function() {
+            if (confirm('Tem certeza que deseja limpar todas as configurações? Esta ação não pode ser desfeita.')) {
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'pagstar_clear_settings',
+                        nonce: '<?php echo wp_create_nonce("pagstar_clear_settings"); ?>'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast('Sucesso', 'Configurações limpas com sucesso', 'success');
+                            // Limpar campos do formulário
+                            $('#client_id, #client_secret, #pix_key, #link_r, #webhook_url').val('');
+                            // Recarregar a página após 2 segundos
+                            setTimeout(function() {
+                                window.location.reload();
+                            }, 2000);
+                        } else {
+                            showToast('Erro', response.data || 'Erro ao limpar configurações', 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        showToast('Erro', 'Erro ao limpar configurações: ' + error, 'error');
+                    }
+                });
+            }
         });
     });
     </script>
@@ -748,6 +813,7 @@ function pagstar_settings_page()
             </table>
 
             <?php submit_button('Salvar Configurações', 'primary', 'submit', true, array('id' => 'submit-pagstar-settings')); ?>
+            <button type="button" id="clear-pagstar-settings" class="button button-secondary">Limpar Configurações</button>
         </form>
     </div>
     <?php
@@ -856,5 +922,36 @@ function pagstar_update_gateway_status() {
     }
     
     wp_send_json_success('Status atualizado com sucesso');
+}
+
+// Adicionar ação AJAX para limpar configurações
+add_action('wp_ajax_pagstar_clear_settings', 'pagstar_clear_settings');
+function pagstar_clear_settings() {
+    check_ajax_referer('pagstar_clear_settings', 'nonce');
+    
+    if (!current_user_can('manage_woocommerce')) {
+        wp_send_json_error('Permissão negada');
+    }
+
+    // Lista de opções para remover
+    $options = [
+        'pagstar_client_id',
+        'pagstar_client_secret',
+        'pagstar_pix_key',
+        'pagstar_link_r',
+        'pagstar_webhook_url',
+        'pagstar_cert_crt_path',
+        'pagstar_cert_key_path'
+    ];
+
+    // Remover cada opção
+    foreach ($options as $option) {
+        delete_option($option);
+    }
+
+    // Limpar transients
+    delete_transient('pagstar_access_token');
+
+    wp_send_json_success('Configurações limpas com sucesso');
 }
 
