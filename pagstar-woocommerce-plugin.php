@@ -463,6 +463,34 @@ function pagstar_settings_page()
             }, 5000);
         }
 
+        // Atualizar o botão de ativar/desativar
+        $('input[name="woocommerce_pagstar_enabled"]').on('change', function() {
+            var checkbox = $(this);
+            var value = checkbox.is(':checked') ? 'yes' : 'no';
+            
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'pagstar_update_gateway_status',
+                    enabled: value,
+                    nonce: '<?php echo wp_create_nonce("pagstar_update_gateway_status"); ?>'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showToast('Sucesso', 'Status atualizado com sucesso', 'success');
+                    } else {
+                        showToast('Erro', response.data || 'Erro ao atualizar status', 'error');
+                        checkbox.prop('checked', !checkbox.is(':checked'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    showToast('Erro', 'Erro ao atualizar status: ' + error, 'error');
+                    checkbox.prop('checked', !checkbox.is(':checked'));
+                }
+            });
+        });
+
         // Tratamento do formulário
         $('form').on('submit', function(e) {
             e.preventDefault();
@@ -480,10 +508,15 @@ function pagstar_settings_page()
                 processData: false,
                 contentType: false,
                 success: function(response) {
-                    if (response.success) {
-                        showToast('Sucesso', response.data, 'success');
-                    } else {
-                        showToast('Erro', response.data, 'error');
+                    try {
+                        var data = typeof response === 'string' ? JSON.parse(response) : response;
+                        if (data.success) {
+                            showToast('Sucesso', data.data || 'Configurações salvas com sucesso', 'success');
+                        } else {
+                            showToast('Erro', data.data || 'Erro ao salvar configurações', 'error');
+                        }
+                    } catch (e) {
+                        showToast('Erro', 'Erro ao processar resposta do servidor', 'error');
                     }
                 },
                 error: function(xhr, status, error) {
@@ -817,13 +850,11 @@ function pagstar_update_gateway_status() {
     $enabled = sanitize_text_field($_POST['enabled'] ?? 'no');
     update_option('woocommerce_pagstar_settings', array('enabled' => $enabled));
     
-    wp_send_json_success();
-}
-
-// Adicionar hook para limpar cache após atualização de configurações
-add_action('update_option_woocommerce_pagstar_settings', function($old_value, $new_value) {
+    // Limpar cache do WooCommerce
     if (function_exists('wc_get_container')) {
         wc_get_container()->get(\Automattic\WooCommerce\Caching\Cache::class)->flush();
     }
-}, 10, 2);
+    
+    wp_send_json_success('Status atualizado com sucesso');
+}
 

@@ -16,67 +16,177 @@ if (!defined('ABSPATH')) {
 class Pagstar_API {
     private $client_id;
     private $client_secret;
-    private $base_url = 'https://api.pagstar.com.br/v1';
-    private $crt_path;
+    private $pix_key;
+    private $link_r;
+    private $webhook_url;
+    private $base_url = 'https://api.pix.pagstar.com';
+    private $cert_path;
     private $key_path;
+    private $access_token;
+    private $token_expires_at;
 
     public function __construct() {
         $this->client_id = get_option('pagstar_client_id');
         $this->client_secret = get_option('pagstar_client_secret');
-        $this->crt_path = get_option('pagstar_crt');
-        $this->key_path = get_option('pagstar_key');
+        $this->pix_key = get_option('pagstar_pix_key');
+        $this->link_r = get_option('pagstar_link_r');
+        $this->webhook_url = get_option('pagstar_webhook_url');
+        $this->cert_path = get_option('pagstar_cert_crt_path');
+        $this->key_path = get_option('pagstar_cert_key_path');
     }
 
-    private function make_request($endpoint, $method = 'GET', $data = null) {
-        $url = $this->base_url . $endpoint;
-        $args = array(
-            'method' => $method,
-            'headers' => array(
-                'Content-Type' => 'application/json',
-                'Authorization' => 'Basic ' . base64_encode($this->client_id . ':' . $this->client_secret)
-            ),
-            'timeout' => 30,
-            'sslverify' => true
-        );
-
-        if ($data) {
-            $args['body'] = json_encode($data);
+    private function get_access_token()
+    {
+        // Tentar obter o token do transient
+        $cached_token = get_transient('pagstar_access_token');
+        if ($cached_token) {
+            $this->access_token = $cached_token;
+            return $this->access_token;
         }
 
-        // Adicionar certificados se existirem
-        if ($this->crt_path && file_exists($this->crt_path)) {
-            $args['sslcert'] = $this->crt_path;
+        $url = $this->base_url . '/oauth/token';
+        $ch = curl_init();
+
+        // Configurações básicas do cURL
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+
+        // Configurar certificados MTLS
+        if ($this->cert_path && file_exists($this->cert_path)) {
+            curl_setopt($ch, CURLOPT_SSLCERT, $this->cert_path);
         }
         if ($this->key_path && file_exists($this->key_path)) {
-            $args['sslkey'] = $this->key_path;
+            curl_setopt($ch, CURLOPT_SSLKEY, $this->key_path);
         }
 
-        $response = wp_remote_request($url, $args);
+        // Configurar headers
+        $headers = [
+            'Content-Type: application/json',
+            'Accept: application/json'
+        ];
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-        if (is_wp_error($response)) {
-            $error_message = $response->get_error_message();
-            $this->show_error_toast('Erro na requisição', $error_message);
-            return array(
+        // Configurar dados
+        $data = [
+            'grant_type' => 'client_credentials',
+            'client_id' => $this->client_id,
+            'client_secret' => $this->client_secret
+        ];
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+
+        // Executar requisição
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        // Tratar resposta
+        if ($error) {
+            throw new Exception('Erro na requisição de token: ' . $error);
+        }
+
+        $response_data = json_decode($response, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception('Erro ao decodificar resposta JSON do token');
+        }
+
+        if ($http_code !== 200) {
+            throw new Exception($response_data['message'] ?? 'Erro ao obter token de acesso');
+        }
+
+        // Salvar token e tempo de expiração
+        $this->access_token = $response_data['access_token'];
+        
+        // Armazenar token no transient por 4 minutos
+        set_transient('pagstar_access_token', $this->access_token, 4 * MINUTE_IN_SECONDS);
+
+        return $this->access_token;
+    }
+
+    private function make_request($endpoint, $method = 'POST', $data = []) {
+        try {
+            // Obter token de acesso
+            $token = $this->get_access_token();
+
+            $url = $this->base_url . $endpoint;
+            $ch = curl_init();
+
+            // Configurações básicas do cURL
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+
+            // Configurar certificados MTLS
+            if ($this->cert_path && file_exists($this->cert_path)) {
+                curl_setopt($ch, CURLOPT_SSLCERT, $this->cert_path);
+            }
+            if ($this->key_path && file_exists($this->key_path)) {
+                curl_setopt($ch, CURLOPT_SSLKEY, $this->key_path);
+            }
+
+            // Configurar headers
+            $headers = [
+                'Content-Type: application/json',
+                'Accept: application/json',
+                'Authorization: Bearer ' . $token
+            ];
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+            // Configurar método e dados
+            if ($method === 'POST' || $method === 'PUT') {
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+            } elseif ($method === 'GET') {
+                if (!empty($data)) {
+                    $url .= '?' . http_build_query($data);
+                    curl_setopt($ch, CURLOPT_URL, $url);
+                }
+            }
+
+            // Executar requisição
+            $response = curl_exec($ch);
+            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+
+            // Tratar resposta
+            if ($error) {
+                return [
+                    'code' => 500,
+                    'message' => 'Erro na requisição: ' . $error,
+                    'data' => null
+                ];
+            }
+
+            $response_data = json_decode($response, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return [
+                    'code' => 500,
+                    'message' => 'Erro ao decodificar resposta JSON',
+                    'data' => null
+                ];
+            }
+
+            return [
+                'code' => $http_code,
+                'message' => $response_data['message'] ?? 'Requisição bem-sucedida',
+                'data' => $response_data
+            ];
+        } catch (Exception $e) {
+            return [
                 'code' => 500,
-                'message' => $error_message,
+                'message' => $e->getMessage(),
                 'data' => null
-            );
+            ];
         }
-
-        $response_code = wp_remote_retrieve_response_code($response);
-        $response_body = wp_remote_retrieve_body($response);
-        $response_data = json_decode($response_body, true);
-
-        if ($response_code >= 400) {
-            $error_message = isset($response_data['message']) ? $response_data['message'] : 'Erro desconhecido';
-            $this->show_error_toast('Erro na API', $error_message);
-        }
-
-        return array(
-            'code' => $response_code,
-            'message' => isset($response_data['message']) ? $response_data['message'] : '',
-            'data' => $response_data
-        );
     }
 
     private function show_error_toast($title, $message) {
@@ -103,42 +213,55 @@ class Pagstar_API {
         });
     }
 
-    public function configure_webhook($webhook_url) {
+    public function configure_webhook($webhook_url)
+    {
         try {
-            $response = $this->make_request('/webhooks', 'POST', array(
-                'url' => $webhook_url,
-                'events' => array('payment.created', 'payment.updated')
-            ));
-
-            if ($response['code'] === 200) {
-                $this->show_success_toast('Webhook Configurado', 'Webhook configurado com sucesso');
+            // Verificar se temos a chave PIX
+            if (empty($this->pix_key)) {
+                throw new Exception('Chave PIX não configurada');
             }
 
+            $data = [
+                'webhookUrl' => $webhook_url
+            ];
+
+            // Usar o endpoint correto com a chave PIX
+            $response = $this->make_request('/webhook/' . $this->pix_key, 'PUT', $data);
+
+            if ($response['code'] !== 200) {
+                throw new Exception($response['message'] ?? 'Erro ao configurar webhook');
+            }
+
+            $this->show_success_toast('Webhook Configurado', 'Webhook configurado com sucesso');
             return $response;
         } catch (Exception $e) {
             $this->show_error_toast('Erro na Configuração', $e->getMessage());
-            return array(
+            return [
                 'code' => 500,
                 'message' => $e->getMessage(),
                 'data' => null
-            );
+            ];
         }
     }
 
-    public function create_payment($order_id, $amount, $pix_key) {
+    public function create_payment($order_id, $amount, $description = '') {
         try {
-            $response = $this->make_request('/payments', 'POST', array(
+            $data = [
                 'order_id' => $order_id,
                 'amount' => $amount,
-                'pix_key' => $pix_key,
-                'payment_method' => 'pix'
-            ));
+                'description' => $description,
+                'pix_key' => $this->pix_key,
+                'link_r' => $this->link_r
+            ];
 
-            if ($response['code'] === 200) {
-                $this->show_success_toast('Pagamento Criado', 'Pagamento criado com sucesso');
+            $response = $this->make_request('/payments', 'POST', $data);
+
+            if ($response['code'] !== 200) {
+                throw new Exception($response['message']);
             }
 
-            return $response;
+            $this->show_success_toast('Pagamento Criado', 'Pagamento criado com sucesso');
+            return $response['data'];
         } catch (Exception $e) {
             $this->show_error_toast('Erro no Pagamento', $e->getMessage());
             return array(
@@ -151,13 +274,13 @@ class Pagstar_API {
 
     public function get_payment_status($payment_id) {
         try {
-            $response = $this->make_request('/payments/' . $payment_id);
+            $response = $this->make_request('/payments/' . $payment_id, 'GET');
 
-            if ($response['code'] === 200) {
-                return $response['data'];
+            if ($response['code'] !== 200) {
+                throw new Exception($response['message']);
             }
 
-            return null;
+            return $response['data'];
         } catch (Exception $e) {
             $this->show_error_toast('Erro na Consulta', $e->getMessage());
             return null;
@@ -166,17 +289,16 @@ class Pagstar_API {
 
     public function validate_credentials() {
         try {
-            $response = $this->make_request('/auth/validate');
+            $response = $this->make_request('/validate', 'GET');
 
-            if ($response['code'] === 200) {
-                $this->show_success_toast('Credenciais Válidas', 'Credenciais validadas com sucesso');
-                return true;
+            if ($response['code'] !== 200) {
+                throw new Exception($response['message']);
             }
 
-            $this->show_error_toast('Credenciais Inválidas', 'Verifique suas credenciais');
-            return false;
+            $this->show_success_toast('Credenciais Válidas', 'Credenciais validadas com sucesso');
+            return true;
         } catch (Exception $e) {
-            $this->show_error_toast('Erro na Validação', $e->getMessage());
+            $this->show_error_toast('Credenciais Inválidas', 'Verifique suas credenciais');
             return false;
         }
     }
