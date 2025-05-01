@@ -242,46 +242,6 @@ function pagstar_sanitize_filename($filename) {
     return $filename;
 }
 
-// Função para validar o conteúdo do certificado CRT
-function pagstar_validate_certificate_content($cert_content) {
-    // Verificar se o certificado começa e termina com os marcadores corretos
-    if (!preg_match('/^-----BEGIN CERTIFICATE-----\n.*\n-----END CERTIFICATE-----$/s', $cert_content)) {
-        return new WP_Error('invalid_cert_format', 'Formato do certificado inválido');
-    }
-
-    // Verificar se o certificado é válido usando OpenSSL
-    $cert = openssl_x509_read($cert_content);
-    if (!$cert) {
-        return new WP_Error('invalid_cert', 'Certificado inválido ou corrompido');
-    }
-
-    // Verificar data de expiração
-    $validTo = openssl_x509_parse($cert, true)['validTo_time_t'];
-    if ($validTo < time()) {
-        return new WP_Error('expired_cert', 'Certificado expirado');
-    }
-
-    openssl_x509_free($cert);
-    return true;
-}
-
-// Função para validar o conteúdo da chave privada
-function pagstar_validate_private_key($key_content) {
-    // Verificar se a chave começa e termina com os marcadores corretos
-    if (!preg_match('/^-----BEGIN PRIVATE KEY-----\n.*\n-----END PRIVATE KEY-----$/s', $key_content)) {
-        return new WP_Error('invalid_key_format', 'Formato da chave privada inválido');
-    }
-
-    // Verificar se a chave é válida usando OpenSSL
-    $key = openssl_pkey_get_private($key_content);
-    if (!$key) {
-        return new WP_Error('invalid_key', 'Chave privada inválida ou corrompida');
-    }
-
-    openssl_pkey_free($key);
-    return true;
-}
-
 // Função para verificar a integridade do arquivo
 function pagstar_verify_file_integrity($file_path) {
     if (!file_exists($file_path)) {
