@@ -218,12 +218,43 @@ class Pagstar_API {
         });
     }
 
+    public function delete_webhook()
+    {
+        try {
+            // Verificar se temos a chave PIX
+            if (empty($this->pix_key)) {
+                throw new Exception('Chave PIX não configurada');
+            }
+
+            // Usar o endpoint correto com a chave PIX
+            $response = $this->make_request('/webhook/' . $this->pix_key, 'DELETE');
+
+            if ($response['code'] !== 200 && $response['code'] !== 404) {
+                throw new Exception($response['message'] ?? 'Erro ao deletar webhook');
+            }
+
+            return $response;
+        } catch (Exception $e) {
+            return [
+                'code' => 500,
+                'message' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+    }
+
     public function configure_webhook($webhook_url)
     {
         try {
             // Verificar se temos a chave PIX
             if (empty($this->pix_key)) {
                 throw new Exception('Chave PIX não configurada');
+            }
+
+            // Primeiro deletar o webhook existente
+            $delete_response = $this->delete_webhook();
+            if ($delete_response['code'] === 500) {
+                throw new Exception('Erro ao deletar webhook existente: ' . $delete_response['message']);
             }
 
             $data = [
