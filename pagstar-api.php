@@ -99,8 +99,8 @@ class Pagstar_API {
             throw new Exception('Erro ao decodificar resposta JSON do token');
         }
 
-        if ($http_code !== 200) {
-            throw new Exception($response_data['message'] ?? 'Erro ao obter token de acesso');
+        if ($http_code !== 201) {
+            throw new Exception($response_data['message'] ?? 'Erro ao obter token de acesso' . $http_code);
         }
 
         // Salvar token e tempo de expiração
