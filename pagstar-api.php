@@ -252,10 +252,10 @@ class Pagstar_API {
             }
 
             // Primeiro deletar o webhook existente
-            $delete_response = $this->delete_webhook();
-            if ($delete_response['code'] === 500) {
-                throw new Exception('Erro ao deletar webhook existente: ' . $delete_response['message']);
-            }
+            // $delete_response = $this->delete_webhook();
+            // if ($delete_response['code'] === 500) {
+            //     throw new Exception('Erro ao deletar webhook existente: ' . $delete_response['message']);
+            // }
 
             $data = [
                 'webhookUrl' => $webhook_url
