@@ -673,15 +673,12 @@ function pagstar_settings_page()
             $webhook_response = $api->configure_webhook($_POST['webhook_url']);
 
             if ($webhook_response['code'] !== 200) {
-                wp_send_json_success(array(
-                    'success' => true,
-                    'webhook_error' => $webhook_response['message']
-                ));
+                wp_send_json_error('Erro ' . $webhook_response['message']);
                 exit;
             }
 
             // Sempre retornar JSON e encerrar a execução
-            wp_send_json_success($webhook_response['code']);
+            wp_send_json_success('Configurações salvas com sucesso');
             exit;
 
         } catch (Exception $e) {
