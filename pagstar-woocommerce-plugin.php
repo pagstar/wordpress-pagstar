@@ -622,16 +622,6 @@ function pagstar_settings_page()
     </script>
     <?php
 
-    // Verificar status dos certificados
-    $crt_path = get_option('pagstar_crt');
-    $key_path = get_option('pagstar_key');
-    $crt_exists = $crt_path && file_exists($crt_path);
-    $key_exists = $key_path && file_exists($key_path);
-
-    // Obter nomes dos arquivos
-    $crt_filename = $crt_exists ? basename($crt_path) : '';
-    $key_filename = $key_exists ? basename($key_path) : '';
-
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && check_admin_referer('pagstar_settings_nonce', 'pagstar_nonce')) {
         $errors = [];
         $success = true;
@@ -660,7 +650,7 @@ function pagstar_settings_page()
             if (!empty($_FILES['pagstar_crt']['tmp_name'])) {
                 $crt_path = $upload_dir . '/pagstar_cert.crt';
                 if (move_uploaded_file($_FILES['pagstar_crt']['tmp_name'], $crt_path)) {
-                    update_option('pagstar_crt', $crt_path);
+                    update_option('pagstar_cert_crt_path', $crt_path);
                 } else {
                     echo '<div class="notice notice-error"><p>Erro ao salvar o certificado CRT.</p></div>';
                 }
@@ -670,7 +660,7 @@ function pagstar_settings_page()
             if (!empty($_FILES['pagstar_key']['tmp_name'])) {
                 $key_path = $upload_dir . '/pagstar_key.key';
                 if (move_uploaded_file($_FILES['pagstar_key']['tmp_name'], $key_path)) {
-                    update_option('pagstar_key', $key_path);
+                    update_option('pagstar_cert_key_path', $key_path);
                 } else {
                     echo '<div class="notice notice-error"><p>Erro ao salvar a chave privada KEY.</p></div>';
                 }
