@@ -654,6 +654,24 @@ function pagstar_settings_page()
                 throw new Exception('URL de webhook inválida');
             }
 
+            $upload_dir = wp_upload_dir();
+            $cert_dir = $upload_dir['basedir'] . '/pagstar-certificados';
+            if (!file_exists($cert_dir)) {
+                wp_mkdir_p($cert_dir);
+            }
+
+            if (isset($_FILES['pagstar_crt']) && $_FILES['pagstar_crt']['error'] === UPLOAD_ERR_OK) {
+                $crt_path = $cert_dir . '/certificado.crt';
+                move_uploaded_file($_FILES['pagstar_crt']['tmp_name'], $crt_path);
+                update_option('pagstar_crt', $crt_path);
+            }
+
+            if (isset($_FILES['pagstar_key']) && $_FILES['pagstar_key']['error'] === UPLOAD_ERR_OK) {
+                $key_path = $cert_dir . '/chave.key';
+                move_uploaded_file($_FILES['pagstar_key']['tmp_name'], $key_path);
+                update_option('pagstar_key', $key_path);
+            }
+
             // Preparar configurações
             $settings = array(
                 'pagstar_client_id' => sanitize_text_field($_POST['client_id']),
