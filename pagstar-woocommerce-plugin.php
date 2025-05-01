@@ -440,12 +440,23 @@ function pagstar_settings_page()
             color: #721c24;
         }
 
+        /* Estilo do grupo de botões */
+        .button-group {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .button-group .button {
+            margin: 0;
+        }
+
         /* Estilo do botão de limpar */
         #clear-pagstar-settings {
             background-color: #dc3545 !important;
             color: white !important;
             border-color: #dc3545 !important;
-            margin-left: 10px;
+            margin-left: 10px !important;
         }
 
         #clear-pagstar-settings:hover {
@@ -675,14 +686,17 @@ function pagstar_settings_page()
             $response = $api->configure_webhook($_POST['webhook_url']);
 
             if ($response['code'] !== 200) {
-                throw new Exception('Erro na configuração do webhook: ' . ($response['message'] ?? 'Erro desconhecido'));
+                wp_send_json_error($response['message']);
+                exit;
             }
 
-            // Sempre retornar JSON
+            // Sempre retornar JSON e encerrar a execução
             wp_send_json_success('Configurações salvas com sucesso');
+            exit;
 
         } catch (Exception $e) {
             wp_send_json_error($e->getMessage());
+            exit;
         }
     }
     ?>
@@ -833,8 +847,10 @@ function pagstar_settings_page()
                 </tr>
             </table>
 
-            <?php submit_button('Salvar Configurações', 'primary', 'submit', true, array('id' => 'submit-pagstar-settings')); ?>
-            <button type="button" id="clear-pagstar-settings" class="button button-secondary" style="background-color: #dc3545; color: white; border-color: #dc3545; margin-left: 10px;">Limpar Configurações</button>
+            <div class="button-group">
+                <?php submit_button('Salvar Configurações', 'primary', 'submit', false, array('id' => 'submit-pagstar-settings')); ?>
+                <button type="button" id="clear-pagstar-settings" class="button button-secondary" style="background-color: #dc3545; color: white; border-color: #dc3545; margin-left: 10px;">Limpar Configurações</button>
+            </div>
         </form>
     </div>
     <?php
