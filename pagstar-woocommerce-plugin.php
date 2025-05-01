@@ -690,7 +690,7 @@ function pagstar_settings_page()
             }
 
             // Sempre retornar JSON e encerrar a execução
-            wp_send_json_success('Configurações salvas com sucesso');
+            showToast('Sucesso', 'Configurações salvas com sucesso', 'success');
             exit;
 
         } catch (Exception $e) {

@@ -165,6 +165,52 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     );
   }
 
+  public function approve_payment($txid)
+  {
+    global $wpdb;
+
+    $table_name = $wpdb->prefix . 'webhook_transactions';
+
+    $transacion = $wpdb->get_row(
+      $wpdb->prepare(
+        "SELECT * FROM $table_name WHERE transacion_id = %d",
+        $txid
+      )
+    );
+
+    if (!$transacion) {
+      return [
+        'is_error' => true,
+        'message' => 'Pagamento não encontrado'
+      ];
+    }
+
+    $order = wc_get_order($transacion->order_id);
+
+    $response = $this->api->get_payment_status($txid);
+
+    if ($response['code'] !== 200) {
+      return [
+        'is_error' => true,
+        'message' => 'Erro na consulta. Código de resposta: ' . $response['code']
+      ];
+    }
+
+    $res = $response['body'];
+
+    if ($res['status'] == 'CONCLUIDA') {
+      $data_to_save = array(
+        'order_id' => $order_id,
+        'transaction_id' => $res['txid'],
+        'order_value' => $order->get_total(),
+        'status' => 'Aprovado'
+      );
+
+      $wpdb->update($table_name, $data_to_save);
+    }
+    return $res;
+  }
+
   public function enviar_requisicao_pagamento($order_id)
   {
     $order = wc_get_order($order_id);
@@ -192,7 +238,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     );
     
 
-    $response = $this->api->create_cob($data);
+    $response = $this->api->create_payment($data);
 
     if ($response['code'] !== 200) {
       return 'Erro na solicitação. Código de resposta: ' . $response['code'];

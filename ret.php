@@ -5,6 +5,7 @@ header('Content-Type: application/json');
 
 // Inclui o arquivo de funções utilitárias
 require_once(__DIR__ . '/utils.php');
+require_once plugin_dir_path(__FILE__) . 'class-pagstar-gateway.php';
 
 // Função para limpar e fazer backup dos logs
 function rotateLogs() {
@@ -128,6 +129,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Aqui você pode adicionar a lógica de processamento do pagamento
         // Por exemplo, atualizar o status do pagamento no banco de dados
+        $gateway = new WC_Pagstar_Gateway();
+
+        $response = $gateway->approve_payment($data['txid']);
+
+        if ($response['is_error']) {
+            $error = $response['message'];
+            logError($error, $data);
+            throw new Exception($error);
+        }
         
         // Resposta de sucesso
         http_response_code(200);

@@ -218,31 +218,6 @@ class Pagstar_API {
         });
     }
 
-    public function delete_webhook()
-    {
-        try {
-            // Verificar se temos a chave PIX
-            if (empty($this->pix_key)) {
-                throw new Exception('Chave PIX não configurada');
-            }
-
-            // Usar o endpoint correto com a chave PIX
-            $response = $this->make_request('/webhook/' . $this->pix_key, 'DELETE');
-
-            if ($response['code'] !== 200 && $response['code'] !== 404) {
-                throw new Exception($response['message'] ?? 'Erro ao deletar webhook');
-            }
-
-            return $response;
-        } catch (Exception $e) {
-            return [
-                'code' => 500,
-                'message' => $e->getMessage(),
-                'data' => null
-            ];
-        }
-    }
-
     public function configure_webhook($webhook_url)
     {
         try {
@@ -250,12 +225,6 @@ class Pagstar_API {
             if (empty($this->pix_key)) {
                 throw new Exception('Chave PIX não configurada');
             }
-
-            // Primeiro deletar o webhook existente
-            // $delete_response = $this->delete_webhook();
-            // if ($delete_response['code'] === 500) {
-            //     throw new Exception('Erro ao deletar webhook existente: ' . $delete_response['message']);
-            // }
 
             $data = [
                 'webhookUrl' => $webhook_url
@@ -281,17 +250,9 @@ class Pagstar_API {
         }
     }
 
-    public function create_payment($order_id, $amount, $description = '') {
+    public function create_payment($data) {
         try {
-            $data = [
-                'order_id' => $order_id,
-                'amount' => $amount,
-                'description' => $description,
-                'pix_key' => $this->pix_key,
-                'link_r' => $this->link_r
-            ];
-
-            $response = $this->make_request('/payments', 'POST', $data);
+            $response = $this->make_request('/cob', 'POST', $data);
 
             if ($response['code'] !== 200) {
                 throw new Exception($response['message']);
@@ -309,9 +270,9 @@ class Pagstar_API {
         }
     }
 
-    public function get_payment_status($payment_id) {
+    public function get_payment_status($txid) {
         try {
-            $response = $this->make_request('/payments/' . $payment_id, 'GET');
+            $response = $this->make_request('/cob/' . $txid, 'GET');
 
             if ($response['code'] !== 200) {
                 throw new Exception($response['message']);
