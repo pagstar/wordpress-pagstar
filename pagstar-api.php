@@ -183,7 +183,7 @@ class Pagstar_API {
             if ($http_code < 200 || $http_code >= 300) {
                 return [
                     'code' => $http_code,
-                    'message' => $response_data['message'] ?? 'Erro na API',
+                    'message' => json_encode($response_data),
                     'data' => $response_data
                 ];
             }
