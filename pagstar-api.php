@@ -180,8 +180,16 @@ class Pagstar_API {
                 ];
             }
 
+            if ($http_code < 200 || $http_code >= 300) {
+                return [
+                    'code' => $http_code,
+                    'message' => $response_data['message'] ?? 'Erro na API',
+                    'data' => $response_data
+                ];
+            }
+
             return [
-                'code' => $http_code ?: 500,
+                'code' => $http_code,
                 'message' => $response_data['message'] ?? 'Requisição bem-sucedida',
                 'data' => $response_data
             ];
@@ -254,8 +262,12 @@ class Pagstar_API {
         try {
             $response = $this->make_request('/cob', 'POST', $data);
 
-            if ($response['code'] !== 200) {
-                throw new Exception($response['message']);
+            if ($response['code'] < 200 || $response['code'] >= 300) {
+                return [
+                    'code' => $response['code'],
+                    'message' => $response['message'] ?? 'Erro na API',
+                    'data' => $response
+                ];
             }
 
             $this->show_success_toast('Pagamento Criado', 'Pagamento criado com sucesso');
