@@ -162,14 +162,14 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       if ($response['code'] !== 200) {
 
         wc_add_notice( $response['erro'], 'error' );
-        $order->update_status('pending', 'Erro na requisição status '. $response['erro']);
+        $order->update_status('pending', __('Erro na requisição status '. $response['erro'], 'text-domain'));
         return array(
           'result' => 'failure'
         );
       }
 
       
-      $order->update_status('pending', __('Pagamento pendente de confirmação. Aguardando a confirmação do pagamento.', 'text-domain'));
+      $order->update_status('cancelled', __('Pagamento pendente de confirmação. Aguardando a confirmação do pagamento.', 'text-domain'));
       return array(
         'result' => 'success',
         'redirect' => $this->get_return_url($order)
