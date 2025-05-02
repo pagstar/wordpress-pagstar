@@ -169,7 +169,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
         );
       }
 
-      
+      $order->add_order_note( 'Requisição passou: ' . $response['erro'] );
       $order->update_status('pending', __('Pagamento pendente de confirmação. Aguardando a confirmação do pagamento.', 'text-domain'));
       return array(
         'result' => 'success',
