@@ -156,14 +156,31 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
   public function process_payment($order_id)
   {
-    $response = $this->enviar_requisicao_pagamento($order_id);
+    try {
+      $response = $this->enviar_requisicao_pagamento($order_id);
 
-    $order = wc_get_order($order_id);
-    $order->update_status('pending', __('Pagamento pendente de confirmação. Aguardando a confirmação do pagamento.', 'text-domain'));
-    return array(
-      'result' => 'success',
-      'redirect' => get_option('pagstar_link_r'),
-    );
+      if ($response['code'] !== 200) {
+
+        wc_add_notice( $response['erro'], 'error' );
+
+        return array(
+          'result' => 'failure'
+        );
+      }
+
+      $order = wc_get_order($order_id);
+      $order->update_status('pending', __('Pagamento pendente de confirmação. Aguardando a confirmação do pagamento.', 'text-domain'));
+      return array(
+        'result' => 'success',
+        'redirect' => $this->get_return_url($order)
+      );
+    } catch (Exception $e) {
+      wc_add_notice( 'Erro inesperado ao processar o pagamento. Tente novamente.', 'error' );
+
+      return array(
+        'result' => 'failure'
+      );
+    }
   }
 
   public function approve_payment($txid)
@@ -242,7 +259,10 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     $response = $this->api->create_payment($data);
 
     if ($response['code'] !== 200) {
-      return 'Erro na solicitação. Código de resposta: ' . $response['code'];
+      return [
+        'code' => $response['code'],
+        'error' => 'Erro na solicitação. Código de resposta: ' . $response['code']
+      ];
     }
 
     $res = $response['body'];
