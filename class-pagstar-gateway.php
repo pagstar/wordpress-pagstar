@@ -137,7 +137,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
   public function is_available()
   {
-    return true;
+    return $this->enabled = 'yes';
     // $is_available = parent::is_available();
     
     // if ($is_available) {
