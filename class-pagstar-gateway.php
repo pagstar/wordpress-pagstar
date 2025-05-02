@@ -256,10 +256,12 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       ]
     );
     
+    $order->add_order_note( json_encode($data) );
 
     $response = $this->api->create_payment($data);
 
     if ($response['code'] !== 200) {
+      $order->add_order_note( $response['message'] );
       return [
         'code' => $response['code'],
         'error' => 'Erro na solicitação. Código de resposta: ' . $response['code']
