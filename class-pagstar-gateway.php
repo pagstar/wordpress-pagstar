@@ -163,7 +163,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       if ($response['code'] !== 200) {
 
         wc_add_notice( 'Erro na requisição status: ' . $response['code'], 'error' );
-        $order->add_order_note( 'Erro na requisição status: ' . $response['code'] );
+        $order->add_order_note( 'Erro na requisição status: ' . $response['code'] . ' ' . $response['error'] );
         return array(
           'result' => 'failure'
         );
@@ -264,7 +264,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       $order->add_order_note( $response['message'] );
       return [
         'code' => $response['code'],
-        'error' => 'Erro na solicitação. Código de resposta: ' . $response['code']
+        'error' => $response['message']
       ];
     }
 
