@@ -156,27 +156,28 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
   public function process_payment($order_id)
   {
+    $order = wc_get_order($order_id);
     try {
       $response = $this->enviar_requisicao_pagamento($order_id);
-      $order = wc_get_order($order_id);
+      
       if ($response['code'] !== 200) {
 
         wc_add_notice( $response['erro'], 'error' );
-        $order->update_status('pending', __('Erro na requisição status '. $response['erro'], 'text-domain'));
+        $order->add_order_note( 'Erro na requisição status: ' . $response['erro'] );
         return array(
           'result' => 'failure'
         );
       }
 
       
-      $order->update_status('cancelled', __('Pagamento pendente de confirmação. Aguardando a confirmação do pagamento.', 'text-domain'));
+      $order->update_status('pending', __('Pagamento pendente de confirmação. Aguardando a confirmação do pagamento.', 'text-domain'));
       return array(
         'result' => 'success',
         'redirect' => $this->get_return_url($order)
       );
     } catch (Exception $e) {
       wc_add_notice( 'Erro inesperado ao processar o pagamento. Tente novamente.', 'error' );
-
+      $order->add_order_note( 'Erro inesperado ao processar o pagamento. Tente novamente.');
       return array(
         'result' => 'failure'
       );
