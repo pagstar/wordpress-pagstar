@@ -164,7 +164,8 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
         wc_add_notice( $response['erro'], 'error' );
 
         return array(
-          'result' => 'failure'
+          'result' => 'failure',
+          'messages'=> $response['erro']
         );
       }
 
@@ -178,7 +179,8 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       wc_add_notice( 'Erro inesperado ao processar o pagamento. Tente novamente.', 'error' );
 
       return array(
-        'result' => 'failure'
+        'result' => 'failure',
+        'messages'=> 'Erro inesperado'
       );
     }
   }
