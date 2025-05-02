@@ -163,10 +163,9 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
         wc_add_notice( $response['erro'], 'error' );
 
-        return new \WP_Error(
-          'pagamento_falhou',
-          $response['erro'], 'error',
-          [ 'status' => $response['code'] ]
+        return array(
+          'result' => 'failure',
+          'messages'=> $response['erro']
         );
       }
 
@@ -179,10 +178,9 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     } catch (Exception $e) {
       wc_add_notice( 'Erro inesperado ao processar o pagamento. Tente novamente.', 'error' );
 
-      return new \WP_Error(
-        'pagamento_falhou',
-        'Erro inesperado ao processar o pagamento',
-        [ 'status' => 400 ]
+      return array(
+        'result' => 'failure',
+        'messages'=> 'Erro inesperado'
       );
     }
   }
