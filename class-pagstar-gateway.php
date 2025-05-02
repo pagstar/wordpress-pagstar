@@ -158,18 +158,17 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
   {
     try {
       $response = $this->enviar_requisicao_pagamento($order_id);
-
+      $order = wc_get_order($order_id);
       if ($response['code'] !== 200) {
 
         wc_add_notice( $response['erro'], 'error' );
-
+        $order->update_status('pending', 'Erro na requisição status '. $response['erro']);
         return array(
-          'result' => 'failure',
-          'messages'=> $response['erro']
+          'result' => 'failure'
         );
       }
 
-      $order = wc_get_order($order_id);
+      
       $order->update_status('pending', __('Pagamento pendente de confirmação. Aguardando a confirmação do pagamento.', 'text-domain'));
       return array(
         'result' => 'success',
@@ -179,8 +178,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       wc_add_notice( 'Erro inesperado ao processar o pagamento. Tente novamente.', 'error' );
 
       return array(
-        'result' => 'failure',
-        'messages'=> 'Erro inesperado'
+        'result' => 'failure'
       );
     }
   }
