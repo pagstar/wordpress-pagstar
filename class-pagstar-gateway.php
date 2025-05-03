@@ -246,15 +246,18 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
         'original' => $order->get_total(),
         'modalidadeAlteracao' => 0
       ],
-      'devedor' => [
-        'nome' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
-        'cpf' => $cpf,
-      ],
       'chave' => $pix_key,
       'calendario' => [
         'expiracao' => 3600 
       ]
     );
+
+    if (!empty($cpf)) {
+      $data['devedor'] = [
+        'nome' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+        'cpf' => $cpf,
+      ];
+    }
     
     $order->add_order_note( json_encode($data) );
 
