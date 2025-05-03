@@ -208,7 +208,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
     $response = $this->api->get_payment_status($txid);
 
-    if ($response['code'] !== 200) {
+    if ($response['code'] < 200 || $response['code'] >= 300) {
       return [
         'is_error' => true,
         'message' => 'Erro na consulta. Código de resposta: ' . $response['code']
@@ -265,7 +265,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
     $order->add_order_note( json_encode($response) );
 
-    if ($response['code'] !== 200) {
+    if ($response['code'] < 200 || $response['code'] >= 300) {
       $order->add_order_note( $response['message'] );
       return [
         'is_error' => true,
