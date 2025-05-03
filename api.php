@@ -38,5 +38,5 @@ try {
 } catch (Exception $e) {
     // Log do erro opcional
     error_log('Erro ao consultar status de pagamento Pagstar: ' . $e->getMessage());
-    echo 0; // Para o JS, considera como ainda não aprovado
+    echo 350; // Para o JS, considera como ainda não aprovado
 }
