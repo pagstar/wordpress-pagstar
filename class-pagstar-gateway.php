@@ -454,6 +454,17 @@ function change_order_status_callback()
     if ($order) {
       $order->update_status($status);
 
+      global $wpdb;
+      $table_name = $wpdb->prefix . 'webhook_transactions'; // Replace 'webhook_transactions' with your table name
+      $wpdb->update(
+        $table_name,
+        [
+          'status' => 'Aprovado'
+        ],
+        [
+          'order_id' => $order_id
+        ]
+      );
       // Verificar se o status é 'completed' e enviar o e-mail padrão do WooCommerce
       if ($status === 'completed') {
         wc_send_order_status_email($order_id, $status);
