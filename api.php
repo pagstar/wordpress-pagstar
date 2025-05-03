@@ -22,8 +22,6 @@ try {
     // Consulta o status do pagamento via método
     $response = $api->get_payment_status($transaction_id);
 
-    wp_send_json('Teste retorno ' . json_encode($response));
-
     // Espera-se que $response seja um array associativo com chave 'status'
     if (!is_array($response) || !isset($response['status'])) {
         die('Resposta inválida da API');
@@ -34,7 +32,7 @@ try {
     if ($response['status'] === 'CONCLUIDA') {
         echo 1; // Pagamento aprovado
     } else {
-        echo 0; // Ainda aguardando ou outro status
+        echo 350; // Ainda aguardando ou outro status
     }
 
 } catch (Exception $e) {
