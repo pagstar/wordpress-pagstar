@@ -307,8 +307,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
     if ('pagstar' === $order->get_payment_method()) {
 
-      $response = $this->enviar_requisicao_pagamento($order_id);
-      $response_data = json_decode($response, true);
+      $response_data = $this->enviar_requisicao_pagamento($order_id);
       // print_r( $response_data);
 
       $qrcodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' . $response_data['pixCopiaECola'];
