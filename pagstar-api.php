@@ -271,7 +271,7 @@ class Pagstar_API {
             }
 
             $this->show_success_toast('Pagamento Criado', 'Pagamento criado com sucesso');
-            return $response['data'];
+            return $response;
         } catch (Exception $e) {
             $this->show_error_toast('Erro no Pagamento', $e->getMessage());
             return array(
