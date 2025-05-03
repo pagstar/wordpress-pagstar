@@ -379,7 +379,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
               },
               success: function (data) {
-
+                console.log("Resposta da API:", data);
                 if (data == 1) {
                   window.location.href = '<?= get_option('pagstar_link_r'); ?>';
 

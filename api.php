@@ -12,6 +12,7 @@ if (empty($transaction_id) || empty($refer)) {
     die('Dados inválidos.');
 }
 
+require_once('../../../../wp-load.php');
 // Inclui o arquivo da classe Pagstar_API
 require_once __DIR__ . '/pagstar-api.php';
 
@@ -22,10 +23,13 @@ try {
     // Consulta o status do pagamento via método
     $response = $api->get_payment_status($transaction_id);
 
+    print_r($response);
+
     // Espera-se que $response seja um array associativo com chave 'status'
     if (!is_array($response) || !isset($response['status'])) {
         die('Resposta inválida da API');
     }
+
 
     // Ajuste conforme os possíveis status da Pagstar
     if ($response['status'] === 'CONCLUIDA') {
