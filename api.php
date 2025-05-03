@@ -22,7 +22,7 @@ try {
     // Consulta o status do pagamento via método
     $response = $api->get_payment_status($transaction_id);
 
-    echo 'Teste retorno ' . json_encode($response);
+    wp_send_json('Teste retorno ' . json_encode($response));
 
     // Espera-se que $response seja um array associativo com chave 'status'
     if (!is_array($response) || !isset($response['status'])) {
@@ -32,9 +32,9 @@ try {
 
     // Ajuste conforme os possíveis status da Pagstar
     if ($response['status'] === 'CONCLUIDA') {
-        echo '1'; // Pagamento aprovado
+        wp_send_json('1'); // Pagamento aprovado
     } else {
-        echo '0'; // Ainda aguardando ou outro status
+        wp_send_json('0'); // Ainda aguardando ou outro status
     }
 
 } catch (Exception $e) {
