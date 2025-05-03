@@ -161,15 +161,15 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       $response = $this->enviar_requisicao_pagamento($order_id);
       
       if ($response['is_error']) {
+        wc_add_notice( 'Erro inesperado ao processar o pagamento, status: ' . $response['code'], 'error' );
 
-        wc_add_notice( 'Erro na requisição status: ' . $response['code'], 'error' );
-        $order->add_order_note( 'Erro na requisição status: ' . $response['code'] . ' ' . $response['error'] );
         return array(
           'result' => 'failure'
         );
       }
 
-      $order->add_order_note( 'Requisição passou: ' . $response['code'] );
+      update_option($order_id, json_encode($response));
+
       $order->update_status('pending', __('Pagamento pendente de confirmação. Aguardando a confirmação do pagamento.', 'text-domain'));
       return array(
         'result' => 'success',
@@ -177,7 +177,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       );
     } catch (Exception $e) {
       wc_add_notice( 'Erro inesperado ao processar o pagamento. Tente novamente.', 'error' );
-      $order->add_order_note( 'Erro inesperado ao processar o pagamento. Tente novamente.');
+
       return array(
         'result' => 'failure'
       );
@@ -307,7 +307,9 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
     if ('pagstar' === $order->get_payment_method()) {
 
-      $response_data = $this->enviar_requisicao_pagamento($order_id);
+      $response = get_option($order_id);
+
+      $response_data = json_decode($response, true);
       // print_r( $response_data);
 
       $qrcodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' . $response_data['pixCopiaECola'];
