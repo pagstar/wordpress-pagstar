@@ -241,7 +241,7 @@ class Pagstar_API {
             // Usar o endpoint correto com a chave PIX
             $response = $this->make_request('/webhook/' . $this->pix_key, 'PUT', $data);
 
-            if ($response['code'] !== 200) {
+            if ($response['code'] < 200 || $response['code'] >= 300) {
                 throw new Exception($response['message'] ?? 'Erro ao configurar webhook');
             }
 
@@ -286,7 +286,7 @@ class Pagstar_API {
         try {
             $response = $this->make_request('/cob/' . $txid, 'GET');
 
-            if ($response['code'] !== 200) {
+            if ($response['code'] < 200 || $response['code'] >= 300) {
                 throw new Exception($response['message']);
             }
 
@@ -301,7 +301,7 @@ class Pagstar_API {
         try {
             $response = $this->make_request('/validate', 'GET');
 
-            if ($response['code'] !== 200) {
+            if ($response['code'] < 200 || $response['code'] >= 300) {
                 throw new Exception($response['message']);
             }
 
