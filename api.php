@@ -32,13 +32,13 @@ try {
 
     // Ajuste conforme os possíveis status da Pagstar
     if ($response['status'] === 'CONCLUIDA') {
-        wp_send_json('1'); // Pagamento aprovado
+        echo 1; // Pagamento aprovado
     } else {
-        wp_send_json('0'); // Ainda aguardando ou outro status
+        echo 0; // Ainda aguardando ou outro status
     }
 
 } catch (Exception $e) {
     // Log do erro opcional
     error_log('Erro ao consultar status de pagamento Pagstar: ' . $e->getMessage());
-    echo '0'; // Para o JS, considera como ainda não aprovado
+    echo 0; // Para o JS, considera como ainda não aprovado
 }
