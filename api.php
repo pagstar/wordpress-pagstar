@@ -24,6 +24,7 @@ try {
 
     // Espera-se que $response seja um array associativo com chave 'status'
     if (!is_array($response) || !isset($response['status'])) {
+        echo 350;
         die('Resposta inválida da API');
     }
 
