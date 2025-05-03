@@ -35,9 +35,6 @@ try {
     // Consulta o status do pagamento via método
     $response = $api->get_payment_status($transaction_id);
 
-    // Teste de retorno para debug
-    wp_send_json('Teste retorno ' . json_encode($response));
-
     // Espera-se que $response seja um array associativo com chave 'status'
     if (!is_array($response) || !isset($response['status'])) {
         die('Resposta inválida da API');
