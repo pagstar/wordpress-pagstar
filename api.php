@@ -22,6 +22,8 @@ try {
     // Consulta o status do pagamento via método
     $response = $api->get_payment_status($transaction_id);
 
+    echo 'Teste retorno ' . $response;
+
     // Espera-se que $response seja um array associativo com chave 'status'
     if (!is_array($response) || !isset($response['status'])) {
         die('Resposta inválida da API');
