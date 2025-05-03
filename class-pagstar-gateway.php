@@ -272,7 +272,9 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       ];
     }
 
-    $res = $response['body'];
+    $res = $response['data'];
+
+    $order->add_order_note( json_encode($res) );
 
     global $wpdb;
     $table_name = $wpdb->prefix . 'webhook_transactions'; // Replace 'webhook_transactions' with your table name
