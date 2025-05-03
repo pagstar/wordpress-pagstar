@@ -190,7 +190,7 @@ class Pagstar_API {
 
             return [
                 'code' => $http_code,
-                'message' => $response_data['message'] ?? 'Requisição bem-sucedida',
+                'message' => json_encode($response_data),
                 'data' => $response_data
             ];
         } catch (Exception $e) {
@@ -265,7 +265,7 @@ class Pagstar_API {
             if ($response['code'] < 200 || $response['code'] >= 300) {
                 return [
                     'code' => $response['code'],
-                    'message' => $response['message'] ?? 'Erro na API',
+                    'message' => $response['message'] . $response['code'],
                     'data' => $response
                 ];
             }
