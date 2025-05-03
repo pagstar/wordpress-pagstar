@@ -251,6 +251,16 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       );
 
       $wpdb->insert($table_name, $data_to_save);
+    } else {
+      $wpdb->update(
+        $table_name,
+        [
+          'status' => 'Pendente'
+        ],
+        [
+          'order_id' => $order_id
+        ]
+      );
     }
     return $res;
   }
