@@ -22,7 +22,7 @@ try {
     // Consulta o status do pagamento via método
     $response = $api->get_payment_status($transaction_id);
 
-    echo 'Teste retorno ' . $response;
+    echo 'Teste retorno ' . json_encode($response);
 
     // Espera-se que $response seja um array associativo com chave 'status'
     if (!is_array($response) || !isset($response['status'])) {
