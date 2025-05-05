@@ -532,7 +532,6 @@ function pagstar_settings_page()
         var hasClientSecret = $('#client_secret').val().length > 0;
         var hasPixKey = $('#pix_key').val().length > 0;
         var hasLinkR = $('#link_r').val().length > 0;
-        var hasWebhookUrl = $('#webhook_url').val().length > 0;
 
         // Só mostrar toast de carregamento se não for uma submissão de formulário
         var isSubmit = window.location.href.includes('action=submit') || 
@@ -620,7 +619,7 @@ function pagstar_settings_page()
                         if (response.success) {
                             showToast('Sucesso', 'Configurações limpas com sucesso', 'success');
                             // Limpar campos do formulário
-                            $('#client_id, #client_secret, #pix_key, #link_r, #webhook_url').val('');
+                            $('#client_id, #client_secret, #pix_key, #link_r').val('');
                             // Recarregar a página após 2 segundos
                             setTimeout(function() {
                                 window.location.reload();
@@ -657,9 +656,6 @@ function pagstar_settings_page()
             if (empty($_POST['link_r']) || !filter_var($_POST['link_r'], FILTER_VALIDATE_URL)) {
                 throw new Exception('URL de redirecionamento inválida');
             }
-            if (empty($_POST['webhook_url']) || !filter_var($_POST['webhook_url'], FILTER_VALIDATE_URL)) {
-                throw new Exception('URL de webhook inválida');
-            }
 
             $upload_dir = wp_upload_dir()['basedir'];
 
@@ -688,8 +684,7 @@ function pagstar_settings_page()
                 'pagstar_client_id' => sanitize_text_field($_POST['client_id']),
                 'pagstar_client_secret' => sanitize_text_field($_POST['client_secret']),
                 'pagstar_pix_key' => sanitize_text_field($_POST['pix_key']),
-                'pagstar_link_r' => esc_url_raw($_POST['link_r']),
-                'pagstar_webhook_url' => esc_url_raw($_POST['webhook_url'])
+                'pagstar_link_r' => esc_url_raw($_POST['link_r'])
             );
 
             // Atualizar configurações
@@ -760,15 +755,6 @@ function pagstar_settings_page()
                     <td>
                         <input type="url" name="link_r" id="link_r" 
                                value="<?php echo esc_attr(get_option('pagstar_link_r')); ?>" 
-                               class="regular-text" required>
-                        <span class="help-text">URL para onde o cliente será redirecionado após o pagamento</span>
-                    </td>
-                </tr>
-                <tr>
-                    <th><label for="webhook_url" class="required-field">URL de Webhook:</label></th>
-                    <td>
-                        <input type="url" name="webhook_url" id="webhook_url" 
-                               value="<?php echo esc_attr(get_option('pagstar_webhook_url')); ?>" 
                                class="regular-text" required>
                         <span class="help-text">URL para onde o cliente será redirecionado após o pagamento</span>
                     </td>

@@ -18,7 +18,6 @@ class Pagstar_API {
     private $client_secret;
     private $pix_key;
     private $link_r;
-    private $webhook_url;
     private $base_url = 'https://api.pix.pagstar.com';
     private $cert_path;
     private $key_path;
@@ -30,7 +29,6 @@ class Pagstar_API {
         $this->client_secret = get_option('pagstar_client_secret');
         $this->pix_key = get_option('pagstar_pix_key');
         $this->link_r = get_option('pagstar_link_r');
-        $this->webhook_url = get_option('pagstar_webhook_url');
         $this->cert_path = get_option('pagstar_cert_crt_path');
         $this->key_path = get_option('pagstar_cert_key_path');
     }
