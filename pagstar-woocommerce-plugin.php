@@ -80,8 +80,6 @@ function pagstar_init_gateway()
     });
 }
 
-require_once plugin_dir_path(__FILE__) . 'pagstar-api.php';
-
 
 // Adicionar link de configuração rápida
 function pagstar_add_action_links($links)
@@ -690,15 +688,6 @@ function pagstar_settings_page()
             // Atualizar configurações
             foreach ($settings as $key => $value) {
                 update_option($key, $value);
-            }
-
-            // Configurar webhook
-            $api = new Pagstar_API();
-            $webhook_response = $api->configure_webhook($_POST['webhook_url']);
-
-            if ($webhook_response['code'] !== 200) {
-                wp_send_json_error('Erro ' . $webhook_response['message']);
-                exit;
             }
 
             // Sempre retornar JSON e encerrar a execução
