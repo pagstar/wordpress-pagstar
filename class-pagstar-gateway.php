@@ -118,9 +118,8 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
         WC()->payment_gateways()->payment_gateways = null;
         WC()->payment_gateways()->get_available_payment_gateways();
 
-        // Recarrega as configurações do próprio gateway
-        $this->init_settings();
-        $this->enabled = $this->get_option( 'enabled' );
+        update_option('woocommerce_pagstar_settings', array('enabled' => $enabled));
+
     }
 
     return $saved;
