@@ -402,12 +402,12 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
         return new WP_Error( 'missing_transaction_id', 'Transação não encontrada para este pedido.' );
     }
 
-    $order->add_order_note( 'Transação: '. $transaction['transaction_id'] );
+    $order->add_order_note( 'Transação: '. $transaction->transaction_id );
 
     try {
         $api = new Pagstar_API();
         
-        $getPayment = $api->get_payment_status($transaction['transaction_id']);
+        $getPayment = $api->get_payment_status($transaction->transaction_id);
 
         $order->add_order_note( json_encode($getPayment) );
 
@@ -428,11 +428,11 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
                 return true;
             } else {
                 $error_msg = isset( $response['message'] ) ? $response['message'] : 'Erro desconhecido';
-                return new WP_Error( 'pagstar_devolucao_falhou', "Falha ao resgatar via Pagstar: $error_msg" );
+                return new WP_Error( 'pagstar_devolucao_falhou', "Falha ao devolver via Pagstar: $error_msg" );
             }
         }
     } catch ( Exception $e ) {
-        return new WP_Error( 'pagstar_exception', 'Erro ao tentar resgatar: ' . $e->getMessage() );
+        return new WP_Error( 'pagstar_exception', 'Erro na devolução: ' . $e->getMessage() );
     }
   }
 
