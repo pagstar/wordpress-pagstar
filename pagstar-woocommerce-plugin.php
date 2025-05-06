@@ -957,7 +957,7 @@ function pagstar_update_gateway_status() {
     
     // Limpar cache do WooCommerce
     if (function_exists('wc_get_container')) {
-        wc_get_container()->get(\Automattic\WooCommerce\Caching\Cache::class)->flush();
+        wc_delete_product_transients();;
     }
     
     wp_send_json_success('Status atualizado com sucesso');

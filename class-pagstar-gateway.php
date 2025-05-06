@@ -112,6 +112,8 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       if ($saved && function_exists('wc_get_container')) {
           wc_delete_product_transients();
       }
+
+      WC()->payment_gateways()->payment_gateways = null;
   }
 
   public function is_available()
