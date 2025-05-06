@@ -15,8 +15,9 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
    */
   public function __construct()
   {
-    $this->api = new Pagstar_API();
-
+    if (class_exists('Pagstar_API')) {
+      $this->api = new Pagstar_API();
+    }
 
     // Obtém a URL da pasta do plugin
     $plugin_url = plugins_url('', __FILE__);
@@ -62,7 +63,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     $this->title = $this->get_option('title');
     $this->description = $this->get_option('description');
     $this->instructions = $this->get_option('instructions');
-    $this->enabled = 'yes';
+    $this->enabled = $this->get_option('enabled');
 
     // Ações
     add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -121,14 +122,6 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       // Limpar cache do WooCommerce
       if (function_exists('wc_get_container')) {
         wc_get_container()->get(\Automattic\WooCommerce\Caching\Cache::class)->flush();
-      }
-
-      // Verificar se é uma requisição AJAX
-      if (wp_doing_ajax()) {
-        wp_send_json_success(array(
-          'enabled' => $enabled,
-          'message' => 'Status atualizado com sucesso'
-        ));
       }
     }
     
