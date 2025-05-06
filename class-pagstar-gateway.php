@@ -383,8 +383,11 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
         return new WP_Error( 'invalid_order', 'Pedido inválido.' );
     }
 
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'webhook_transactions'; // Replace 'webhook_transactions' with your table name
+
     // 2. Obter o ID da transação (salvo no momento do pagamento)
-    $transaction_id = $order->get_transaction_id();
+    $transaction_id = $order->get_meta('_transaction_id');
 
     if ( ! $transaction_id ) {
         return new WP_Error( 'missing_transaction_id', 'Transação não encontrada para este pedido.' );
@@ -399,7 +402,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
         // Espera-se que $response seja um array associativo com chave 'status'
         if (!is_array($getPayment) || !isset($getPayment['status'])) {
-          return new WP_Error( 'missing_transaction_id', 'Transação não encontrada para este pedido.' );
+          return new WP_Error( 'missing_payment', 'Pagamento não encontrado para este pedido.' );
         }
 
         // Ajuste conforme os possíveis status da Pagstar
