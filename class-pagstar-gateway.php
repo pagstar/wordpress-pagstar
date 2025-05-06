@@ -112,12 +112,15 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
         // Limpa transientes e cache
         wc_delete_product_transients();
 
+        wp_cache_flush();
+
+        // Limpa cache de configurações de gateways do WooCommerce
+        WC()->payment_gateways()->payment_gateways = null;
+        WC()->payment_gateways()->get_available_payment_gateways();
+
         // Recarrega as configurações do próprio gateway
         $this->init_settings();
         $this->enabled = $this->get_option( 'enabled' );
-
-        // Força WooCommerce a reconstruir a lista de gateways
-        WC()->payment_gateways()->payment_gateways = null;
     }
 
     return $saved;
