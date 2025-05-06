@@ -310,4 +310,21 @@ class Pagstar_API {
             return false;
         }
     }
+
+    public function devolver_transacao($endToEnd, $amount) {
+        try {
+            $response = $this->make_request('/pix/' . $endToEnd . '/devolucao/' . $endToEnd, 'PUT', [
+                "valor" => $amount
+            ]);
+
+            if ($response['code'] < 200 || $response['code'] >= 300) {
+                throw new Exception($response['message']);
+            }
+
+            return $response['data'];
+        } catch (Exception $e) {
+            $this->show_error_toast('Erro na Consulta', $e->getMessage());
+            return null;
+        }
+    }
 } 

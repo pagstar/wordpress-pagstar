@@ -382,6 +382,47 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     }
   }
 
+  public function process_refund( $order_id, $amount = null, $reason = '' ) {
+    $order = wc_get_order( $order_id );
+
+    if ( ! $order ) {
+        return new WP_Error( 'invalid_order', 'Pedido inválido.' );
+    }
+
+    // 2. Obter o ID da transação (salvo no momento do pagamento)
+    $transaction_id = $order->get_transaction_id();
+
+    if ( ! $transaction_id ) {
+        return new WP_Error( 'missing_transaction_id', 'Transação não encontrada para este pedido.' );
+    }
+
+    try {
+        $api = new Pagstar_API();
+        
+        $getPayment = $api->get_payment_status($transaction_id);
+
+        // Espera-se que $response seja um array associativo com chave 'status'
+        if (!is_array($getPayment) || !isset($getPayment['status'])) {
+          return new WP_Error( 'missing_transaction_id', 'Transação não encontrada para este pedido.' );
+        }
+
+        // Ajuste conforme os possíveis status da Pagstar
+        if ($getPayment['status'] === 'CONCLUIDA') {
+            $response = $api->devolver_transacao( $getPayment['pix'][0]['endToEndId'], $amount );
+
+            if ( isset( $response['status'] ) && $response['status'] === 'EM_PROCESSAMENTO' ) {
+                $order->add_order_note( "Devolução realizado com sucesso via Pagstar. Valor: R$ {$amount}" );
+                return true;
+            } else {
+                $error_msg = isset( $response['message'] ) ? $response['message'] : 'Erro desconhecido';
+                return new WP_Error( 'pagstar_devolucao_falhou', "Falha ao resgatar via Pagstar: $error_msg" );
+            }
+        }
+    } catch ( Exception $e ) {
+        return new WP_Error( 'pagstar_exception', 'Erro ao tentar resgatar: ' . $e->getMessage() );
+    }
+  }
+
   public function callback_handler()
   {
     if (isset($_GET['callback'])) {
