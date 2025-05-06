@@ -137,21 +137,20 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
   public function is_available()
   {
-    return true;
-    // $is_available = parent::is_available();
+    $is_available = parent::is_available();
     
-    // if ($is_available) {
-    //   // Verificar se as credenciais estão configuradas
-    //   $client_id = get_option('pagstar_client_id');
-    //   $client_secret = get_option('pagstar_client_secret');
-    //   $pix_key = get_option('pagstar_pix_key');
+    if ($is_available) {
+      // Verificar se as credenciais estão configuradas
+      $client_id = get_option('pagstar_client_id');
+      $client_secret = get_option('pagstar_client_secret');
+      $pix_key = get_option('pagstar_pix_key');
       
-    //   if (empty($client_id) || empty($client_secret) || empty($pix_key)) {
-    //     $is_available = false;
-    //   }
-    // }
+      if (empty($client_id) || empty($client_secret) || empty($pix_key)) {
+        $is_available = false;
+      }
+    }
     
-    // return $is_available;
+    return $is_available;
   }
 
   public function process_payment($order_id)
@@ -247,7 +246,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
         'order_id' => $order_id,
         'transaction_id' => $res['txid'],
         'order_value' => $order->get_total(),
-        'status' => 'Pendente'
+        'status' => 'Pending'
       );
 
       $wpdb->insert($table_name, $data_to_save);
@@ -255,7 +254,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       $wpdb->update(
         $table_name,
         [
-          'status' => 'Pendente'
+          'status' => 'Pending'
         ],
         [
           'order_id' => $order_id
@@ -468,7 +467,7 @@ function change_order_status_callback()
       $wpdb->update(
         $table_name,
         [
-          'status' => 'Aprovado'
+          'status' => 'Processing'
         ],
         [
           'order_id' => $order_id
