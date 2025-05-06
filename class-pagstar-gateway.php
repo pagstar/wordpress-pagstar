@@ -109,9 +109,9 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
   {
       $saved = parent::process_admin_options();
 
-      if ($saved && function_exists('wc_get_container')) {
-          wc_get_container()->get(\Automattic\WooCommerce\Caching\Cache::class)->flush();
-      }
+      // if ($saved && function_exists('wc_get_container')) {
+      //     wc_get_container()->get(\Automattic\WooCommerce\Caching\Cache::class)->flush();
+      // }
   }
 
   public function is_available()
