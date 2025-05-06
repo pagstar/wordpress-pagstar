@@ -111,7 +111,6 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     if ($saved) {
       // Forçar atualização do status
       $enabled = $this->get_option('enabled');
-      update_option('woocommerce_pagstar_settings', array('enabled' => $enabled));
       
       // Limpar cache do WooCommerce
       if (function_exists('wc_get_container')) {
