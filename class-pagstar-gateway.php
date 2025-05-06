@@ -105,6 +105,15 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     );
   }
 
+  public function admin_options() {
+    echo '<h2>' . esc_html( $this->get_method_title() ) . '</h2>';
+    echo wp_kses_post( wpautop( $this->get_method_description() ) );
+    // Renderiza os campos definidos via init_form_fields
+    echo '<table class="form-table">';
+    $this->generate_settings_html();
+    echo '</table>';
+  }
+
   public function process_admin_options()
   {
       $saved = parent::process_admin_options();
