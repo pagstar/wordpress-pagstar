@@ -105,18 +105,23 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
   }
 
   public function process_admin_options()
-  {
-      $saved = parent::process_admin_options();
+{
+    $saved = parent::process_admin_options();
 
-      if ($saved && function_exists('wc_get_container')) {
-          wc_delete_product_transients();
+    if ( $saved ) {
+        // Limpa transientes e cache
+        wc_delete_product_transients();
 
-          $this->init_settings();
-          $this->enabled = $this->get_option( 'enabled' );
-      }
+        // Recarrega as configurações do próprio gateway
+        $this->init_settings();
+        $this->enabled = $this->get_option( 'enabled' );
 
-      return $saved;
-  }
+        // Força WooCommerce a reconstruir a lista de gateways
+        WC()->payment_gateways()->payment_gateways = null;
+    }
+
+    return $saved;
+}
 
   public function is_available()
   {
