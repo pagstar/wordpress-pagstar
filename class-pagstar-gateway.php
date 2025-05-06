@@ -197,17 +197,12 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
         'cpf' => $cpf,
       ];
     }
-    
-    $order->add_order_note( json_encode($data) );
 
     $api = new Pagstar_API();
 
     $response = $api->create_payment($data);
 
-    $order->add_order_note( json_encode($response) );
-
     if ($response['code'] < 200 || $response['code'] >= 300) {
-      $order->add_order_note( $response['message'] );
       return [
         'is_error' => true,
         'code' => $response['code'],
@@ -217,7 +212,6 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
     $res = $response['data'];
 
-    $order->add_order_note( json_encode($res) );
 
     global $wpdb;
     $table_name = $wpdb->prefix . 'webhook_transactions'; // Replace 'webhook_transactions' with your table name
@@ -401,6 +395,8 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
         
         $getPayment = $api->get_payment_status($transaction_id);
 
+        $order->add_order_note( json_encode($getPayment) );
+
         // Espera-se que $response seja um array associativo com chave 'status'
         if (!is_array($getPayment) || !isset($getPayment['status'])) {
           return new WP_Error( 'missing_transaction_id', 'Transação não encontrada para este pedido.' );
@@ -409,6 +405,9 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
         // Ajuste conforme os possíveis status da Pagstar
         if ($getPayment['status'] === 'CONCLUIDA') {
             $response = $api->devolver_transacao( $getPayment['pix'][0]['endToEndId'], $amount );
+
+            $order->add_order_note( json_encode($response) );
+
 
             if ( isset( $response['status'] ) && $response['status'] === 'EM_PROCESSAMENTO' ) {
                 $order->add_order_note( "Devolução realizado com sucesso via Pagstar. Valor: R$ {$amount}" );
