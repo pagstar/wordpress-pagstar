@@ -38,7 +38,10 @@ Este plugin permite a integração do método de pagamento PIX da Pagstar com o 
 ## Configuração
 
 1. Acesse WooCommerce > Configurações > Pagamentos
-2. Localize o método de pagamento "Pagstar PIX"
+2. Localize o método de pagamento "Pagstar" e ative-o
+   - Caso ele não atualize o status para ativo nessa tela siga os seguintes passos:
+    - Veja se seu wordpress tem algum plugin de cache ativo
+    - Desative o plugin ou desative nas configurações dele o cache para PHP, Api Rest e/ou Back-End
 3. Configure as credenciais da API:
    - Client ID
    - Client Secret
@@ -120,7 +123,7 @@ Todas as mudanças notáveis deste projeto serão documentadas no arquivo [CHANG
       <a href="https://github.com/WillBorgesDev">
         <img src="https://github.com/WillBorgesDev.png" width="100px;" alt="Will Borges"/>
         <br />
-        <sub><b>Will Borges</b></sub>
+        <sub><b>Wilker Borges</b></sub>
         <br />
         <sub>Desenvolvedor</sub>
       </a>
