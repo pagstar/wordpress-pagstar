@@ -59,6 +59,8 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     $this->instructions = $this->get_option('instructions');
     $this->enabled = $this->get_option('enabled');
 
+    $this->init_settings();
+
     // Ações
     add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
     add_action('woocommerce_thankyou_' . $this->id, array($this, 'thankyou_page'));
@@ -111,6 +113,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     if ($saved) {
       // Forçar atualização do status
       $enabled = $this->get_option('enabled');
+      update_option('woocommerce_pagstar_settings', array('enabled' => $enabled));
       
       // Limpar cache do WooCommerce
       if (function_exists('wc_get_container')) {
