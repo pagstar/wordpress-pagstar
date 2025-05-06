@@ -411,7 +411,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
         // Ajuste conforme os possíveis status da Pagstar
         if ($getPayment['status'] === 'CONCLUIDA') {
             $response = $api->devolver_transacao( $getPayment['pix'][0]['endToEndId'], $amount );
-            if ( isset( $response['status'] ) && $response['status'] === 'EM_PROCESSAMENTO' ) {
+            if ( isset( $response['status'] ) && ($response['status'] === 'EM_PROCESSAMENTO' || $response['status'] === 'DEVOLVIDO') ) {
                 $order->add_order_note( "Devolução realizado com sucesso via Pagstar. Valor: R$ {$amount}" );
                 return true;
             } else {
