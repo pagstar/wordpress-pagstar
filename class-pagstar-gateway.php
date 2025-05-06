@@ -379,6 +379,8 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
   public function process_refund( $order_id, $amount = null, $reason = '' ) {
     $order = wc_get_order( $order_id );
 
+    $order->add_order_note( 'Iniciando devolução' );
+
     if ( ! $order ) {
         return new WP_Error( 'invalid_order', 'Pedido inválido.' );
     }
@@ -387,16 +389,25 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     $table_name = $wpdb->prefix . 'webhook_transactions'; // Replace 'webhook_transactions' with your table name
 
     // 2. Obter o ID da transação (salvo no momento do pagamento)
-    $transaction_id = $order->get_meta('_transaction_id');
+    $transaction = $wpdb->get_row(
+      $wpdb->prepare(
+        "SELECT * FROM $table_name WHERE order_id = %d",
+        $order_id
+      )
+    );
 
-    if ( ! $transaction_id ) {
+    $order->add_order_note( json_encode($transaction) );
+
+    if ( ! $transaction ) {
         return new WP_Error( 'missing_transaction_id', 'Transação não encontrada para este pedido.' );
     }
+
+    $order->add_order_note( 'Transação: '. $transaction['transaction_id'] );
 
     try {
         $api = new Pagstar_API();
         
-        $getPayment = $api->get_payment_status($transaction_id);
+        $getPayment = $api->get_payment_status($transaction['transaction_id']);
 
         $order->add_order_note( json_encode($getPayment) );
 
