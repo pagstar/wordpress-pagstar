@@ -51,14 +51,13 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
     // Carregar configurações
     $this->init_form_fields();
+    $this->init_settings();
 
     // Definir variáveis
     $this->title = $this->get_option('title');
     $this->description = $this->get_option('description');
     $this->instructions = $this->get_option('instructions');
     $this->enabled = $this->get_option('enabled');
-
-    $this->init_settings();
 
     // Ações
     add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -112,8 +111,6 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       if ($saved && function_exists('wc_get_container')) {
           wc_delete_product_transients();
       }
-
-      WC()->payment_gateways()->payment_gateways = null;
   }
 
   public function is_available()
