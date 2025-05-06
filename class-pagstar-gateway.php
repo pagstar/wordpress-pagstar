@@ -8,17 +8,11 @@ require_once plugin_dir_path(__FILE__) . 'pagstar-api.php';
 class WC_Pagstar_Gateway extends WC_Payment_Gateway
 {
 
-  private $api;
-
   /**
    * Compatibilidade com HPOS (High-Performance Order Storage)
    */
   public function __construct()
   {
-    if (class_exists('Pagstar_API')) {
-      $this->api = new Pagstar_API();
-    }
-
     // Obtém a URL da pasta do plugin
     $plugin_url = plugins_url('', __FILE__);
 
@@ -207,7 +201,9 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     
     $order->add_order_note( json_encode($data) );
 
-    $response = $this->api->create_payment($data);
+    $api = new Pagstar_API();
+
+    $response = $api->create_payment($data);
 
     $order->add_order_note( json_encode($response) );
 
