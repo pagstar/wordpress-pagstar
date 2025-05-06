@@ -379,8 +379,6 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
   public function process_refund( $order_id, $amount = null, $reason = '' ) {
     $order = wc_get_order( $order_id );
 
-    $order->add_order_note( 'Iniciando devolução' );
-
     if ( ! $order ) {
         return new WP_Error( 'invalid_order', 'Pedido inválido.' );
     }
@@ -396,20 +394,14 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       )
     );
 
-    $order->add_order_note( json_encode($transaction) );
-
     if ( ! $transaction ) {
         return new WP_Error( 'missing_transaction_id', 'Transação não encontrada para este pedido.' );
     }
-
-    $order->add_order_note( 'Transação: '. $transaction->transaction_id );
 
     try {
         $api = new Pagstar_API();
         
         $getPayment = $api->get_payment_status($transaction->transaction_id);
-
-        $order->add_order_note( json_encode($getPayment) );
 
         // Espera-se que $response seja um array associativo com chave 'status'
         if (!is_array($getPayment) || !isset($getPayment['status'])) {
@@ -419,10 +411,6 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
         // Ajuste conforme os possíveis status da Pagstar
         if ($getPayment['status'] === 'CONCLUIDA') {
             $response = $api->devolver_transacao( $getPayment['pix'][0]['endToEndId'], $amount );
-
-            $order->add_order_note( json_encode($response) );
-
-
             if ( isset( $response['status'] ) && $response['status'] === 'EM_PROCESSAMENTO' ) {
                 $order->add_order_note( "Devolução realizado com sucesso via Pagstar. Valor: R$ {$amount}" );
                 return true;
