@@ -434,7 +434,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
         $status = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : '';
 
         if ($status === '200') {
-          $order->update_status('completed', __('Pagamento concluído com sucesso.', 'text-domain'));
+          $order->update_status('processing', __('Pagamento concluído com sucesso.', 'text-domain'));
         } else {
           $order->update_status('failed', __('Falha no pagamento.', 'text-domain'));
         }
