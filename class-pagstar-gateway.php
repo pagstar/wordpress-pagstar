@@ -328,7 +328,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
                   window.location.href = '<?= get_option('pagstar_link_r'); ?>';
 
                   var order_id = '<?php echo $order_id; ?>'; // Substitua pelo ID real do pedido
-                  set_order_status(order_id, 'completed');
+                  set_order_status(order_id, 'processing');
                 } else {
                   setTimeout(function () {
                     checkTransactionStatus(transaction_id, refer);
@@ -503,8 +503,8 @@ function change_order_status_callback()
           'order_id' => $order_id
         ]
       );
-      // Verificar se o status é 'completed' e enviar o e-mail padrão do WooCommerce
-      if ($status === 'completed') {
+      
+      if ($status === 'processing') {
         wc_send_order_status_email($order_id, $status);
       }
     }
