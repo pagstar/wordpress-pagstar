@@ -178,8 +178,6 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
             'transaction_id' => $txid
         ]
         );
-        
-        wc_send_order_status_email($transaction->order_id, 'processing');
 
         return new WP_REST_Response([
             'success' => 'Sucesso',
