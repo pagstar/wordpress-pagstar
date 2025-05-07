@@ -1,3 +1,14 @@
+## [1.0.5] - 2025-05-07
+
+### Adicionado
+- 
+
+### Melhorado
+- 
+
+### Corrigido
+- 
+
 # Changelog
 
 Todos os destaques notáveis deste projeto serão documentados neste arquivo.
