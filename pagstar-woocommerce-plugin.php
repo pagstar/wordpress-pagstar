@@ -43,6 +43,8 @@ if (!is_plugin_active('woocommerce/woocommerce.php')) {
     return;
 }
 
+require_once plugin_dir_path(__FILE__) . 'pagstar-api.php';
+
 // Verificar versão do WooCommerce
 function pagstar_check_wc_version() {
     if (!class_exists('WooCommerce')) {
@@ -78,53 +80,15 @@ function pagstar_init_gateway() {
         $gateways[] = 'WC_Pagstar_Gateway';
         return $gateways;
     });
-
-    // Adicionar a coluna na listagem de pedidos
-    add_filter( 'manage_edit-shop_order_columns', function( $columns ) {
-        // Insere a nova coluna após o status do pedido
-        $new_columns = [];
-
-        foreach ( $columns as $key => $value ) {
-            $new_columns[ $key ] = $value;
-            if ( 'order_status' === $key ) {
-                $new_columns['pagstar_transaction'] = 'Transação Pagstar';
-            }
-        }
-
-        return $new_columns;
-    }, 50 );
-
-    // Preencher os dados da nova coluna
-    add_action( 'manage_shop_order_posts_custom_column', function( $column, $post_id ) {
-        if ( 'pagstar_transaction' === $column ) {
-            // Buscar o transaction_id salvo no banco
-            global $wpdb;
-            $table_name = $wpdb->prefix . 'webhook_transactions';
-            $transaction = $wpdb->get_row(
-                $wpdb->prepare(
-                    "SELECT * FROM $table_name WHERE order_id = %d",
-                    $post_id
-                )
-            );
-
-            if ( $transaction ) {
-                echo esc_html( $transaction->transaction_id );
-            } else {
-                echo '<span style="color: red;">Sem Transação</span>';
-            }
-        }
-    }, 50, 2 );
-
-    // Estilos para a coluna
-    add_action( 'admin_head', function() {
-        echo '<style>
-            .column-pagstar_transaction {
-                width: 200px !important;
-                white-space: nowrap;
-            }
-        </style>';
-    });
 }
+
+add_action('rest_api_init', function () {
+    register_rest_route('pagstar/v1', '/webhook', [
+        'methods'  => 'POST',
+        'callback' => 'pagstar_handle_webhook',
+        'permission_callback' => '__return_true',
+    ]);
+});
 
 
 
@@ -151,6 +115,71 @@ function pagstar_add_extrato_page() {
         'dashicons-chart-area', // Ícone do menu (opcional)
         25                     // Posição do menu no painel (opcional)
     );
+}
+
+function pagstar_handle_webhook(WP_REST_Request $request) {
+    $body = $request->get_json_params();
+
+    // Verifica se os dados básicos estão presentes
+    if (!isset($body['txid'])) {
+        return new WP_REST_Response(['error' => 'Dados incompletos'], 400);
+    }
+
+    $txid = sanitize_text_field($body['txid']);
+
+    // Encontra o pedido no WooCommerce
+    // $order = wc_get_order($txid);
+
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'webhook_transactions'; // Replace 'webhook_transactions' with your table name
+
+    $transaction = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT * FROM $table_name WHERE transaction_id = %d",
+            $txid
+        )
+    );
+
+    if (!$transaction) {
+        return new WP_REST_Response(['error' => 'Pedido não encontrado'], 404);
+    }
+
+    $order = wc_get_order($transaction->order_id);
+
+    if (!$order) {
+        return new WP_REST_Response(['error' => 'Pedido não encontrado'], 404);
+    }
+
+    $api = new Pagstar_API();
+
+    $response = $api->get_payment_status($txid);
+
+    if (!is_array($response) || !isset($response['status'])) {
+        return new WP_REST_Response('Resposta inválida da API');
+    }
+
+
+    // Ajuste conforme os possíveis status da Pagstar
+    if ($response['status'] === 'CONCLUIDA') {
+
+        $order->update_status('processing');
+    
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'webhook_transactions'; // Replace 'webhook_transactions' with your table name
+        $wpdb->update(
+        $table_name,
+        [
+            'status' => 'Processing'
+        ],
+        [
+            'transaction_id' => $txid
+        ]
+        );
+        
+        if ($status === 'processing') {
+            wc_send_order_status_email($transaction->order_id, $status);
+        }
+    }
 }
 
 function pagstar_render_extrato_page() {
@@ -736,6 +765,10 @@ function pagstar_settings_page()
             foreach ($settings as $key => $value) {
                 update_option($key, $value);
             }
+
+            $api = new Pagstar_API();
+
+            $response = $api->configure_webhook(rest_url('pagstar/v1/webhook'));
 
             // Sempre retornar JSON e encerrar a execução
             wp_send_json_success('Configurações salvas com sucesso');
