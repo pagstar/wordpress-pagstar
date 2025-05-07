@@ -106,6 +106,40 @@ function pagstar_add_extrato_page() {
     );
 }
 
+// Adicionar a coluna na listagem de pedidos
+add_filter( 'manage_edit-shop_order_columns', function( $columns ) {
+    // Adiciona a coluna após o status do pedido
+    $new_columns = [];
+    foreach ( $columns as $key => $value ) {
+        $new_columns[ $key ] = $value;
+        if ( 'order_status' === $key ) {
+            $new_columns['pagstar_transaction'] = 'Transação Pagstar';
+        }
+    }
+    return $new_columns;
+}, 20 );
+
+// Preencher os dados da nova coluna
+add_action( 'manage_shop_order_posts_custom_column', function( $column, $post_id ) {
+    if ( 'pagstar_transaction' === $column ) {
+        // Exemplo: buscar o transaction_id que você salvou no webhook
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'webhook_transactions';
+        $transaction = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM $table_name WHERE order_id = %d",
+                $post_id
+            )
+        );
+
+        if ( $transaction ) {
+            echo esc_html( $transaction->transaction_id );
+        } else {
+            echo '<span style="color: red;">Sem Transação</span>';
+        }
+    }
+}, 20, 2 );
+
 function pagstar_render_extrato_page() {
     global $wpdb;
     $table_name = $wpdb->prefix . 'webhook_transactions';
