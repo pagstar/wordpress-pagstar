@@ -127,6 +127,8 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
 
     $txid = sanitize_text_field($body['txid']);
 
+
+    return new WP_REST_Response(['error' => $txid], 400);
     // Encontra o pedido no WooCommerce
     // $order = wc_get_order($txid);
 
@@ -154,8 +156,16 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
 
     $response = $api->get_payment_status($txid);
 
+    return new WP_REST_Response([
+        'error' => 'Resposta inválida da API',
+        'response' => $response
+    ], 400);
+
     if (!is_array($response) || !isset($response['status'])) {
-        return new WP_REST_Response('Resposta inválida da API');
+        return new WP_REST_Response([
+            'error' => 'Resposta inválida da API',
+            'response' => $response
+        ], 400);
     }
 
 
@@ -179,7 +189,17 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
         if ($status === 'processing') {
             wc_send_order_status_email($transaction->order_id, $status);
         }
+
+        return new WP_REST_Response([
+            'success' => 'Sucesso',
+            'response' => $response
+        ], 200);
     }
+
+    new WP_REST_Response([
+        'error' => 'Pagamento não processado',
+        'response' => $response
+    ], 400);
 }
 
 function pagstar_render_extrato_page() {
