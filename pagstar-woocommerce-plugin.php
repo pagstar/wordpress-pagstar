@@ -3,7 +3,7 @@
  * Plugin Name: Pagstar
  * Plugin URI: https://pagstar.com.br
  * Description: Plugin de integração com a Pagstar para WordPress
- * Version: 1.0.4
+ * Version: 1.0.5
  * Author: Pagstar
  * Author URI: https://pagstar.com.br
  * License: GPLv2
