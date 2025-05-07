@@ -154,11 +154,6 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
 
     $response = $api->get_payment_status($txid);
 
-    return new WP_REST_Response([
-        'error' => 'Resposta inválida da API',
-        'response' => $response
-    ], 400);
-
     if (!is_array($response) || !isset($response['status'])) {
         return new WP_REST_Response([
             'error' => 'Resposta inválida da API',
@@ -190,7 +185,8 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
 
         return new WP_REST_Response([
             'success' => 'Sucesso',
-            'response' => $response
+            'response' => $response,
+            'order' => $order
         ], 200);
     }
 
