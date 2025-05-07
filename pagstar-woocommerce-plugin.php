@@ -156,8 +156,7 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
 
     if (!is_array($response) || !isset($response['status'])) {
         return new WP_REST_Response([
-            'error' => 'Resposta inválida da API',
-            'response' => $response
+            'error' => 'Resposta inválida da API'
         ], 400);
     }
 
@@ -181,16 +180,8 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
 
         return new WP_REST_Response([
             'success' => 'Sucesso',
-            'response' => $response,
-            'order' => $order,
-            'transaction' => $transaction
         ], 200);
     }
-
-    new WP_REST_Response([
-        'error' => 'Pagamento não processado',
-        'response' => $response
-    ], 400);
 }
 
 function pagstar_render_extrato_page() {
