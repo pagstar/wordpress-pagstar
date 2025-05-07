@@ -127,8 +127,6 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
 
     $txid = sanitize_text_field($body['txid']);
 
-
-    return new WP_REST_Response(['error' => $txid], 400);
     // Encontra o pedido no WooCommerce
     // $order = wc_get_order($txid);
 
