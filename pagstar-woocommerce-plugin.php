@@ -119,6 +119,15 @@ add_filter( 'manage_edit-shop_order_columns', function( $columns ) {
     return $new_columns;
 }, 20 );
 
+add_action( 'admin_head', function() {
+    echo '<style>
+        .column-pagstar_transaction {
+            width: 200px;
+            white-space: nowrap;
+        }
+    </style>';
+});
+
 // Preencher os dados da nova coluna
 add_action( 'manage_shop_order_posts_custom_column', function( $column, $post_id ) {
     if ( 'pagstar_transaction' === $column ) {
