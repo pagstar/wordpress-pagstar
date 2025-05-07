@@ -768,8 +768,7 @@ function pagstar_settings_page()
 
             $api = new Pagstar_API();
 
-            $response = $api->configure_webhook(rest_url('pagstar/v1/webhook'));
-
+            $api->configure_webhook(rest_url('pagstar/v1/webhook'));
             // Sempre retornar JSON e encerrar a execução
             wp_send_json_success('Configurações salvas com sucesso');
             exit;
