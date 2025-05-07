@@ -135,7 +135,7 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
 
     $transaction = $wpdb->get_row(
         $wpdb->prepare(
-            "SELECT * FROM $table_name WHERE transaction_id = %d",
+            "SELECT * FROM $table_name WHERE transaction_id = %s",
             $txid
         )
     );
@@ -172,16 +172,14 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
         $wpdb->update(
         $table_name,
         [
-            'status' => 'Processing'
+            'status' => 'processing'
         ],
         [
             'transaction_id' => $txid
         ]
         );
         
-        if ($status === 'processing') {
-            wc_send_order_status_email($transaction->order_id, $status);
-        }
+        wc_send_order_status_email($transaction->order_id, 'processing');
 
         return new WP_REST_Response([
             'success' => 'Sucesso',
