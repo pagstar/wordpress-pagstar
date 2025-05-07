@@ -1,3 +1,14 @@
+## [1.0.5] - 2025-05-07
+
+### Adicionado
+- 
+
+### Melhorado
+- 
+
+### Corrigido
+- 
+
 # Changelog
 
 Todos os destaques notáveis deste projeto serão documentados neste arquivo.
@@ -5,8 +16,48 @@ Todos os destaques notáveis deste projeto serão documentados neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+---
 
-## [1.0.4] - 2024-03-20
+## [1.0.6] - 2025-05-08
+
+### Adicionado
+- Seção de contribuidores no README.md, com avatar e link para o perfil do GitHub
+
+### Alterado
+- Revisão e padronização das datas e histórico do changelog
+
+---
+
+## [1.0.5] - 2025-05-01
+
+### Adicionado
+- Implementação de melhorias de segurança baseadas no OWASP Top 10
+- WAF (Web Application Firewall)
+- MFA (Autenticação em dois fatores)
+- Scanner de dependências
+- Validação de integridade de dados
+- Headers de segurança adicionais
+- Logging seguro
+- Validação de nonce em ações críticas
+- Lista branca de URLs para SSRF
+- RBAC granular
+- Rotação de chaves
+
+### Alterado
+- Otimização do sistema de logs
+- Atualização das configurações de segurança
+- Refatoração do sistema de autenticação
+
+### Corrigido
+- Vulnerabilidade de injeção SQL
+- Problema de CSRF em formulários
+- Falha na validação de sessão
+- Bug no sistema de logging
+- Problema de XSS em inputs
+
+---
+
+## [1.0.4] - 2024-12-10
 
 ### Adicionado
 - Suporte a HPOS (High-Performance Order Storage)
@@ -19,7 +70,6 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Otimização de performance do processamento de pagamentos
 - Melhoria na validação de certificados SSL
 - Atualização da interface administrativa
-- Refatoração do sistema de logs
 
 ### Corrigido
 - Bug na validação de CPF
@@ -27,61 +77,60 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Erro na geração de QR Code
 - Falha no processamento de webhooks
 
-## [1.0.3] - 2024-02-15
+---
+
+## [1.0.3] - 2024-09-15
 
 ### Adicionado
 - Suporte a múltiplas moedas
 - Sistema de notificações toast
 - Logs detalhados de transações
-- Validação de certificados SSL
 
 ### Alterado
 - Melhoria na documentação
 - Otimização de consultas ao banco de dados
-- Atualização da interface do usuário
 
 ### Corrigido
 - Problema com timezone
 - Bug na validação de valores
-- Erro no processamento de reembolsos
 
-## [1.0.2] - 2024-01-10
+---
+
+## [1.0.2] - 2024-06-20
 
 ### Adicionado
 - Suporte a assinaturas recorrentes
 - Sistema de tokenização
 - Validação de certificados MTLS
-- Backup automático de configurações
 
 ### Alterado
 - Melhoria na segurança
 - Otimização de performance
-- Atualização da documentação
 
 ### Corrigido
 - Bug na validação de dados
 - Problema com certificados SSL
-- Erro no processamento de pagamentos
 
-## [1.0.1] - 2023-12-05
+---
+
+## [1.0.1] - 2024-04-10
 
 ### Adicionado
 - Suporte a pre-orders
 - Sistema de logs
 - Validação de dados
-- Documentação inicial
 
 ### Alterado
 - Melhoria na interface
 - Otimização de código
-- Atualização de dependências
 
 ### Corrigido
 - Bug na instalação
 - Problema com permissões
-- Erro na configuração
 
-## [1.0.0] - 2023-11-01
+---
+
+## [1.0.0] - 2024-02-01
 
 ### Adicionado
 - Integração com API Pagstar
@@ -90,54 +139,24 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Painel administrativo
 - Sistema de webhooks
 - Suporte a reembolsos
-- Configurações personalizáveis
 
-### Alterado
-- N/A
-
-### Corrigido
-- N/A
+---
 
 ## Notas de Versão
+
+### Versão 1.0.6
+- Inclusão da seção de contribuidores no README.md
+- Revisão do changelog
 
 ### Versão 1.0.5
 - Implementação completa de OWASP Top 10
 - Melhorias significativas na segurança
-- Novas funcionalidades de proteção
-- Correções de vulnerabilidades críticas
 
-### Versão 1.0.4
-- Melhorias na segurança
-- Otimização de performance
-- Novas funcionalidades administrativas
-- Correções de bugs críticos
-
-### Versão 1.0.3
-- Suporte a múltiplas moedas
-- Sistema de notificações
-- Melhorias na documentação
-- Correções de bugs
-
-### Versão 1.0.2
-- Suporte a assinaturas
-- Sistema de tokenização
-- Melhorias na segurança
-- Correções de bugs
-
-### Versão 1.0.1
-- Suporte a pre-orders
-- Sistema de logs
-- Melhorias na interface
-- Correções de bugs
-
-### Versão 1.0.0
-- Lançamento inicial
-- Funcionalidades básicas
-- Integração com Pagstar
-- Suporte a PIX
+---
 
 ## Links
 
+[1.0.6]: https://github.com/pagstar/wordpress-pagstar/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/pagstar/wordpress-pagstar/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/pagstar/wordpress-pagstar/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/pagstar/wordpress-pagstar/compare/v1.0.2...v1.0.3

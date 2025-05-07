@@ -148,6 +148,34 @@ Para suporte técnico:
 - Comunidade WordPress
 - Todos os contribuidores
 
+## 👥 Contribuidores
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/kleberandrade">
+        <img src="https://github.com/kleberandrade.png" width="100px;" alt="Kleber Andrade"/>
+        <br />
+        <sub><b>Kleber Andrade</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/WillBorgesDev">
+        <img src="https://github.com/WillBorgesDev.png" width="100px;" alt="Wilker Borges"/>
+        <br />
+        <sub><b>Wilker Borges</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/pagstar">
+        <img src="https://github.com/pagstar.png" width="100px;" alt="Equipe Pagstar"/>
+        <br />
+        <sub><b>Equipe Pagstar</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
+
 ---
 
 Desenvolvido com ❤️ pela equipe Pagstar
