@@ -61,69 +61,71 @@ function pagstar_wc_version_notice() {
     echo '<div class="error"><p>O Plugin de Pagamento Pagstar requer WooCommerce versão 8.0.0 ou superior. Por favor, atualize o WooCommerce.</p></div>';
 }
 
-// Adicionar a coluna na listagem de pedidos
-add_filter( 'manage_edit-shop_order_columns', function( $columns ) {
-    // Insere a nova coluna após o status do pedido
-    $new_columns = [];
-
-    foreach ( $columns as $key => $value ) {
-        $new_columns[ $key ] = $value;
-        if ( 'order_status' === $key ) {
-            $new_columns['pagstar_transaction'] = 'Transação Pagstar';
-        }
-    }
-
-    return $new_columns;
-}, 50 );
-
-// Preencher os dados da nova coluna
-add_action( 'manage_shop_order_posts_custom_column', function( $column, $post_id ) {
-    if ( 'pagstar_transaction' === $column ) {
-        // Buscar o transaction_id salvo no banco
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'webhook_transactions';
-        $transaction = $wpdb->get_row(
-            $wpdb->prepare(
-                "SELECT * FROM $table_name WHERE order_id = %d",
-                $post_id
-            )
-        );
-
-        if ( $transaction ) {
-            echo esc_html( $transaction->transaction_id );
-        } else {
-            echo '<span style="color: red;">Sem Transação</span>';
-        }
-    }
-}, 50, 2 );
-
-add_action( 'admin_head', function() {
-    echo '<style>
-        .column-pagstar_transaction {
-            width: 200px !important;
-            white-space: nowrap;
-        }
-    </style>';
-});
-
 add_action('plugins_loaded', 'pagstar_check_wc_version');
 
 // Include the main class file after WooCommerce is loaded
 add_action('plugins_loaded', 'pagstar_init_gateway', 0);
 
-function pagstar_init_gateway()
-{
+function pagstar_init_gateway() {
     if (!class_exists('WC_Payment_Gateway')) {
         return;
     }
 
     require_once(plugin_dir_path(__FILE__) . '/class-pagstar-gateway.php');
 
+    // Registra o método de pagamento
     add_filter('woocommerce_payment_gateways', function($gateways) {
         $gateways[] = 'WC_Pagstar_Gateway';
         return $gateways;
     });
+
+    // Adicionar a coluna na listagem de pedidos
+    add_filter( 'manage_edit-shop_order_columns', function( $columns ) {
+        // Insere a nova coluna após o status do pedido
+        $new_columns = [];
+
+        foreach ( $columns as $key => $value ) {
+            $new_columns[ $key ] = $value;
+            if ( 'order_status' === $key ) {
+                $new_columns['pagstar_transaction'] = 'Transação Pagstar';
+            }
+        }
+
+        return $new_columns;
+    }, 50 );
+
+    // Preencher os dados da nova coluna
+    add_action( 'manage_shop_order_posts_custom_column', function( $column, $post_id ) {
+        if ( 'pagstar_transaction' === $column ) {
+            // Buscar o transaction_id salvo no banco
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'webhook_transactions';
+            $transaction = $wpdb->get_row(
+                $wpdb->prepare(
+                    "SELECT * FROM $table_name WHERE order_id = %d",
+                    $post_id
+                )
+            );
+
+            if ( $transaction ) {
+                echo esc_html( $transaction->transaction_id );
+            } else {
+                echo '<span style="color: red;">Sem Transação</span>';
+            }
+        }
+    }, 50, 2 );
+
+    // Estilos para a coluna
+    add_action( 'admin_head', function() {
+        echo '<style>
+            .column-pagstar_transaction {
+                width: 200px !important;
+                white-space: nowrap;
+            }
+        </style>';
+    });
 }
+
 
 
 // Adicionar link de configuração rápida
