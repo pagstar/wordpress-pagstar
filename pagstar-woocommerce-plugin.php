@@ -186,7 +186,8 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
         return new WP_REST_Response([
             'success' => 'Sucesso',
             'response' => $response,
-            'order' => $order
+            'order' => $order,
+            'transaction' => $transaction
         ], 200);
     }
 
