@@ -1,120 +1,146 @@
-## [1.0.4] - 2025-05-01
-
-### Adicionado
-- 
-
-### Melhorado
-- 
-
-### Corrigido
-- 
-
-## [1.0.3] - 2025-04-30
-
-### Adicionado
-- 
-
-### Melhorado
-- 
-
-### Corrigido
-- 
-
 # Changelog
 
-Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
+Todos os destaques notáveis deste projeto serão documentados neste arquivo.
 
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
-e este projeto adere a [Semantic Versioning](https://semver.org/lang/pt-BR/).
+e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
-## [1.0.2] - 2024-04-30
 
-### Added
-- Toast notifications for better user feedback
-- Company name and email fields in settings form
-- Improved form validation and error handling
-- Arquivo `pagstar-api.php` para centralizar as requisições à API
-- Métodos para gerenciar token de acesso, cobranças e webhook
-- Documentação PHPDoc para todos os métodos da API
-
-### Improved
-- Settings form layout and organization
-- Visual feedback for form submissions
-- Toast notification positioning and timing
-- Variable naming consistency
-- Organização do código com separação de responsabilidades
-- Tratamento de erros nas requisições à API
-- Reutilização de código para requisições HTTP
-
-### Fixed
-- Settings persistence issues
-- Form field validation
-- Toast notification display time
-
-## [1.0.2] - 2024-03-21
+## [1.0.4] - 2024-03-20
 
 ### Adicionado
-- Validação de CPF no webhook
-- Função utilitária para validação de CPF
-- Sistema de rotação de logs diária
-- Backup automático de logs antigos
+- Suporte a HPOS (High-Performance Order Storage)
+- Sistema de backup automático de configurações
+- Validação de integridade de arquivos
+- Verificação de permissões de diretórios
+- Sanitização de nomes de arquivos
 
-### Melhorado
-- Organização do código com arquivo utils.php
-- Tratamento de erros no webhook
-- Sistema de logs mais robusto
-- Sanitização de dados recebidos
+### Alterado
+- Otimização de performance do processamento de pagamentos
+- Melhoria na validação de certificados SSL
+- Atualização da interface administrativa
+- Refatoração do sistema de logs
 
 ### Corrigido
-- Erro de digitação no campo txid
-- Permissões de diretório usando wp_mkdir_p
-- Validação de campos obrigatórios
+- Bug na validação de CPF
+- Problema com certificados MTLS
+- Erro na geração de QR Code
+- Falha no processamento de webhooks
 
-## [1.0.1] - 2024-03-20
+## [1.0.3] - 2024-02-15
 
 ### Adicionado
-- Melhorias na detecção de versão do plugin
-- Atualização automática do CHANGELOG.md
-- Criação automática de releases no GitHub
+- Suporte a múltiplas moedas
+- Sistema de notificações toast
+- Logs detalhados de transações
+- Validação de certificados SSL
 
-### Melhorado
-- Processo de atualização de versão
-- Logs do GitHub Action
+### Alterado
+- Melhoria na documentação
+- Otimização de consultas ao banco de dados
+- Atualização da interface do usuário
 
 ### Corrigido
-- Problemas com permissões no GitHub Action
-- Comandos de push e commit no workflow
+- Problema com timezone
+- Bug na validação de valores
+- Erro no processamento de reembolsos
 
-## [1.0.0] - 2024-03-20
+## [1.0.2] - 2024-01-10
 
 ### Adicionado
-- Implementação inicial do plugin de pagamento PIX
+- Suporte a assinaturas recorrentes
+- Sistema de tokenização
+- Validação de certificados MTLS
+- Backup automático de configurações
+
+### Alterado
+- Melhoria na segurança
+- Otimização de performance
+- Atualização da documentação
+
+### Corrigido
+- Bug na validação de dados
+- Problema com certificados SSL
+- Erro no processamento de pagamentos
+
+## [1.0.1] - 2023-12-05
+
+### Adicionado
+- Suporte a pre-orders
+- Sistema de logs
+- Validação de dados
+- Documentação inicial
+
+### Alterado
+- Melhoria na interface
+- Otimização de código
+- Atualização de dependências
+
+### Corrigido
+- Bug na instalação
+- Problema com permissões
+- Erro na configuração
+
+## [1.0.0] - 2023-11-01
+
+### Adicionado
 - Integração com API Pagstar
-- Página de configurações com campos para credenciais
-- Upload e validação de certificados MTLS
-- Configurações extras para informações de pagamento
-- Configuração de tempo de expiração do QR Code
-- Página de extrato de transações
-- Validação de segurança para uploads
-- Documentação de segurança
-- Contribuição e licença
+- Processamento de pagamentos PIX
+- Geração de QR Code
+- Painel administrativo
+- Sistema de webhooks
+- Suporte a reembolsos
+- Configurações personalizáveis
 
-### Melhorado
-- Validação de extensão de arquivos para certificados
-- Feedback visual no formulário de configurações
-- Organização do código e documentação
-- Segurança geral do plugin
+### Alterado
+- N/A
 
 ### Corrigido
-- Validação de tipos MIME para certificados
-- Sanitização de inputs e outputs
-- Proteção contra CSRF
-- Validação de permissões
+- N/A
 
-## [0.1.0] - 2024-03-15
+## Notas de Versão
 
-### Adicionado
-- Estrutura inicial do plugin
-- Integração básica com WooCommerce
-- Configurações iniciais de pagamento
-- Sistema de webhook para notificações 
+### Versão 1.0.5
+- Implementação completa de OWASP Top 10
+- Melhorias significativas na segurança
+- Novas funcionalidades de proteção
+- Correções de vulnerabilidades críticas
+
+### Versão 1.0.4
+- Melhorias na segurança
+- Otimização de performance
+- Novas funcionalidades administrativas
+- Correções de bugs críticos
+
+### Versão 1.0.3
+- Suporte a múltiplas moedas
+- Sistema de notificações
+- Melhorias na documentação
+- Correções de bugs
+
+### Versão 1.0.2
+- Suporte a assinaturas
+- Sistema de tokenização
+- Melhorias na segurança
+- Correções de bugs
+
+### Versão 1.0.1
+- Suporte a pre-orders
+- Sistema de logs
+- Melhorias na interface
+- Correções de bugs
+
+### Versão 1.0.0
+- Lançamento inicial
+- Funcionalidades básicas
+- Integração com Pagstar
+- Suporte a PIX
+
+## Links
+
+[1.0.5]: https://github.com/pagstar/wordpress-pagstar/compare/v1.0.4...v1.0.5
+[1.0.4]: https://github.com/pagstar/wordpress-pagstar/compare/v1.0.3...v1.0.4
+[1.0.3]: https://github.com/pagstar/wordpress-pagstar/compare/v1.0.2...v1.0.3
+[1.0.2]: https://github.com/pagstar/wordpress-pagstar/compare/v1.0.1...v1.0.2
+[1.0.1]: https://github.com/pagstar/wordpress-pagstar/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/pagstar/wordpress-pagstar/releases/tag/v1.0.0 

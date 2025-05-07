@@ -1,79 +1,211 @@
-# Diretrizes de Contribuição
+# Guia de Contribuição
 
-Obrigado pelo seu interesse em contribuir para o Plugin de Pagamento PIX Pagstar para WooCommerce! Este documento fornece um conjunto de diretrizes para contribuir com o projeto.
+## 📋 Índice
 
-## Como Contribuir
+1. [Como Contribuir](#como-contribuir)
+2. [Configuração do Ambiente](#configuração-do-ambiente)
+3. [Padrões de Código](#padrões-de-código)
+4. [Fluxo de Trabalho](#fluxo-de-trabalho)
+5. [Testes](#testes)
+6. [Documentação](#documentação)
+7. [Pull Requests](#pull-requests)
+8. [Código de Conduta](#código-de-conduta)
+
+## 🤝 Como Contribuir
+
+### Tipos de Contribuição
+
+- 🐛 Reportar bugs
+- 💡 Sugerir melhorias
+- 📝 Melhorar documentação
+- 🔧 Corrigir bugs
+- ✨ Adicionar novas funcionalidades
+
+### Primeiros Passos
 
 1. Faça um fork do repositório
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Faça commit das suas alterações (`git commit -m 'feat: adiciona nova feature'`)
-4. Faça push para a branch (`git push origin feature/nova-feature`)
-5. Abra um Pull Request
+2. Clone seu fork localmente
+3. Configure o ambiente de desenvolvimento
+4. Crie uma branch para sua contribuição
+5. Faça suas alterações
+6. Envie um pull request
 
-## Padrões de Código
+## 🛠️ Configuração do Ambiente
 
-- Siga os padrões de codificação do WordPress
-- Use indentação com tabs
-- Comente seu código quando necessário
-- Mantenha as funções pequenas e focadas
-- Use nomes descritivos para variáveis e funções
+### Requisitos
 
-## Mensagens de Commit
+- PHP 7.4+
+- Composer
+- WordPress 5.0+
+- WooCommerce 5.0+
+- Node.js 14+
+- npm ou yarn
 
-Use o formato convencional de commits:
+### Instalação
 
-- `feat`: Nova feature
-- `fix`: Correção de bug
-- `docs`: Alterações na documentação
-- `style`: Formatação, ponto e vírgula, etc; sem mudança de código
-- `refactor`: Refatoração de código
-- `test`: Adicionando testes
-- `chore`: Atualização de tarefas, configuração, etc; sem mudança de código
-
-Exemplo:
-```
-feat: adiciona suporte a notificações toast
-fix: corrige validação de CPF
-docs: atualiza README com novas instruções
+1. Clone o repositório:
+```bash
+git clone https://github.com/seu-usuario/wordpress-pagstar.git
+cd wordpress-pagstar
 ```
 
-## Testes
+2. Instale as dependências:
+```bash
+composer install
+npm install
+```
 
-- Adicione testes para novas funcionalidades
-- Certifique-se de que todos os testes passam antes de enviar um PR
-- Mantenha a cobertura de testes alta
+3. Configure o ambiente WordPress:
+```bash
+wp core download
+wp config create
+wp db create
+```
 
-## Documentação
+4. Ative o plugin:
+```bash
+wp plugin activate pagstar-woocommerce-plugin
+```
 
-- Atualize a documentação para refletir suas alterações
-- Mantenha o README.md atualizado
-- Adicione comentários PHPDoc para novas funções
-- Atualize o CHANGELOG.md com suas mudanças
+## 📝 Padrões de Código
 
-## Pull Requests
+### PHP
 
-- Descreva claramente as mudanças no PR
-- Inclua screenshots quando relevante
-- Referencie issues relacionadas
-- Certifique-se de que o PR está atualizado com a branch principal
+- Seguir PSR-12
+- Usar type hints
+- Documentar funções e classes
+- Manter código limpo e legível
+- Usar nomes descritivos
 
-## Issues
+### JavaScript
 
-- Use o template de issue apropriado
-- Forneça informações detalhadas sobre o problema
-- Inclua passos para reproduzir o problema
-- Adicione screenshots quando relevante
+- Seguir ESLint
+- Usar ES6+
+- Documentar funções
+- Manter código modular
 
-## Segurança
+### CSS
 
-- Reporte vulnerabilidades de segurança em privado
-- Não inclua credenciais ou dados sensíveis no código
-- Siga as melhores práticas de segurança do WordPress
+- Seguir BEM
+- Usar variáveis CSS
+- Manter especificidade baixa
+- Documentar classes complexas
 
-## Licença
+## 🔄 Fluxo de Trabalho
 
-Ao contribuir, você concorda que suas contribuições serão licenciadas sob a Licença de Software Livre Pagstar.
+1. Crie uma branch:
+```bash
+git checkout -b feature/nova-funcionalidade
+```
 
-## Contato
+2. Faça suas alterações:
+```bash
+git add .
+git commit -m "feat: adiciona nova funcionalidade"
+```
 
-Para dúvidas ou sugestões, entre em contato através do email: suporte@pagstar.com 
+3. Atualize sua branch:
+```bash
+git pull origin main
+```
+
+4. Envie suas alterações:
+```bash
+git push origin feature/nova-funcionalidade
+```
+
+## 🧪 Testes
+
+### Testes Unitários
+
+```bash
+composer test
+```
+
+### Testes de Integração
+
+```bash
+composer test:integration
+```
+
+### Testes E2E
+
+```bash
+npm run test:e2e
+```
+
+## 📚 Documentação
+
+### Comentários
+
+- Documentar funções públicas
+- Explicar lógica complexa
+- Manter documentação atualizada
+- Usar PHPDoc
+
+### README
+
+- Atualizar README.md
+- Documentar novas funcionalidades
+- Atualizar changelog
+- Manter exemplos atualizados
+
+## 🔄 Pull Requests
+
+### Processo
+
+1. Crie uma issue
+2. Descreva as alterações
+3. Referencie a issue no PR
+4. Aguarde revisão
+5. Faça ajustes se necessário
+
+### Template
+
+```markdown
+## Descrição
+
+[Descreva suas alterações]
+
+## Tipo de Alteração
+
+- [ ] Bug fix
+- [ ] Nova funcionalidade
+- [ ] Breaking change
+- [ ] Documentação
+
+## Checklist
+
+- [ ] Testes adicionados
+- [ ] Documentação atualizada
+- [ ] Código segue padrões
+- [ ] Build passa
+- [ ] Lint passa
+```
+
+## 👥 Código de Conduta
+
+### Regras
+
+1. Seja respeitoso
+2. Mantenha foco técnico
+3. Ajude outros contribuidores
+4. Aceite críticas construtivas
+5. Mantenha comunicação profissional
+
+### Comunicação
+
+- Use português claro
+- Seja objetivo
+- Mantenha tom profissional
+- Evite linguagem ofensiva
+
+## 📞 Suporte
+
+Para dúvidas sobre contribuição:
+
+- Email: atendimento@pagstar.com.br
+
+---
+
+Obrigado por contribuir! 🙏 
