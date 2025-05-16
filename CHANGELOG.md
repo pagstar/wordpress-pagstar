@@ -1,3 +1,14 @@
+## [1.0.6] - 2025-05-07
+
+### Adicionado
+- 
+
+### Melhorado
+- 
+
+### Corrigido
+- 
+
 ## [1.0.5] - 2025-05-07
 
 ### Adicionado
