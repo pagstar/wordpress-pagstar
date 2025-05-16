@@ -49,18 +49,18 @@ add_action('woocommerce_admin_order_data_after_order_details', function ($order)
     $txid = $order->get_meta('_pagstar_txid');
     
     if ($end2end) {
-        echo '<div class="address">
-                <br>
-                <p><strong>' . __('End2End ID', 'pagstar') . ':</strong>
-                <br>' . esc_html($end2end) . '</p>
+        echo '<div class="form-field form-field-wide" style="margin-top: 15px;">
+                <label>' . __('End2End ID', 'pagstar') . ':</label>
+                <input type="text" readonly value="' . esc_html($end2end) . '" style="width: calc(100% - 12px); background-color: #f3f3f3; border: 1px solid #ddd; border-radius: 3px; padding: 8px;" />
               </div>';
     }
 
     if ($txid) {
-        echo '<div class="address">
-                <br>
-                <p><strong>' . __('Txid', 'pagstar') . ':</strong>
-                <br>' . esc_html($txid) . '</p>
+        echo '<div class="order_data_column">
+                <h3>' . __('Txid', 'pagstar') . '</h3>
+                <p>
+                    <textarea readonly style="width:100%;resize:none;background-color:#f3f3f3;border-radius:3px;padding:8px;border:1px solid #ddd;">' . esc_html($txid) . '</textarea>
+                </p>
               </div>';
     }
 });
