@@ -43,6 +43,16 @@ if (!is_plugin_active('woocommerce/woocommerce.php')) {
     return;
 }
 
+// Adiciona o campo "end2end" nos detalhes do pedido no admin
+add_action('woocommerce_admin_order_data_after_order_details', function ($order) {
+    $end2end = $order->get_meta('_pagstar_end2end');
+    
+    if ($end2end) {
+        echo '<p><strong>End2End ID:</strong> ' . esc_html($end2end) . '</p>';
+    }
+});
+
+
 require_once plugin_dir_path(__FILE__) . 'pagstar-api.php';
 
 // Verificar versão do WooCommerce
@@ -166,6 +176,9 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
 
         $order->update_status('processing');
     
+        $order->update_meta_data('_pagstar_end2end', $response['pix'][0]['endToEndId']);
+        $order->save();
+
         global $wpdb;
         $table_name = $wpdb->prefix . 'webhook_transactions'; // Replace 'webhook_transactions' with your table name
         $wpdb->update(
