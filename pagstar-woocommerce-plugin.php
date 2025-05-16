@@ -46,9 +46,24 @@ if (!is_plugin_active('woocommerce/woocommerce.php')) {
 // Adiciona o campo "end2end" nos detalhes do pedido no admin
 add_action('woocommerce_admin_order_data_after_order_details', function ($order) {
     $end2end = $order->get_meta('_pagstar_end2end');
+    $txid = $order->get_meta('_pagstar_txid');
     
     if ($end2end) {
-        echo '<p><strong>End2End ID:</strong> ' . esc_html($end2end) . '</p>';
+        echo '<div class="address">
+                <p><strong>' . __('End2End ID', 'pagstar') . ':</strong></p>
+                <div class="editable">
+                    <p>' . esc_html($end2end) . '</p>
+                </div>
+              </div>';
+    }
+
+    if ($txid) {
+        echo '<div class="address">
+                <p><strong>' . __('Txid', 'pagstar') . ':</strong></p>
+                <div class="editable">
+                    <p>' . esc_html($txid) . '</p>
+                </div>
+              </div>';
     }
 });
 
@@ -177,6 +192,7 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
         $order->update_status('processing');
     
         $order->update_meta_data('_pagstar_end2end', $response['pix'][0]['endToEndId']);
+        $order->update_meta_data('_pagstar_txid', $response['txid']);
         $order->save();
 
         global $wpdb;
