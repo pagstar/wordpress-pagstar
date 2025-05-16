@@ -56,11 +56,9 @@ add_action('woocommerce_admin_order_data_after_order_details', function ($order)
     }
 
     if ($txid) {
-        echo '<div class="order_data_column">
-                <h3>' . __('Txid', 'pagstar') . '</h3>
-                <p>
-                    <textarea readonly style="width:100%;resize:none;background-color:#f3f3f3;border-radius:3px;padding:8px;border:1px solid #ddd;">' . esc_html($txid) . '</textarea>
-                </p>
+        echo '<div class="form-field form-field-wide" style="margin-top: 15px;">
+                <label>' . __('Txid', 'pagstar') . ':</label>
+                <input type="text" readonly value="' . esc_html($txid) . '" style="width: calc(100% - 12px); background-color: #f3f3f3; border: 1px solid #ddd; border-radius: 3px; padding: 8px;" />
               </div>';
     }
 });
