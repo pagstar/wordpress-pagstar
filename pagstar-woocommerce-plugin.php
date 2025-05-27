@@ -786,8 +786,8 @@ function pagstar_settings_page()
                 'pagstar_client_secret' => sanitize_text_field($_POST['client_secret']),
                 'pagstar_pix_key' => sanitize_text_field($_POST['pix_key']),
                 'pagstar_link_r' => esc_url_raw($_POST['link_r']),
-                'pagstar_company_name' => esc_url_raw($_POST['company_name']),
-                'pagstar_company_email' => esc_url_raw($_POST['company_email'])
+                'pagstar_company_name' => sanitize_text_field($_POST['company_name']),
+                'pagstar_company_email' => sanitize_text_field($_POST['company_email'])
             );
 
             // Atualizar configurações
