@@ -263,7 +263,7 @@ class Pagstar_API {
             if ($response['code'] < 200 || $response['code'] >= 300) {
                 return [
                     'code' => $response['code'],
-                    'message' => $response['message'] . $response['code'],
+                    'message' => $response['message'],
                     'data' => $response
                 ];
             }

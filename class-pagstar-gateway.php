@@ -146,7 +146,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       $response = $this->enviar_requisicao_pagamento($order_id);
       
       if ($response['is_error']) {
-        wc_add_notice( 'Erro inesperado ao processar o pagamento, status: ' . $response['code'], 'error' );
+        wc_add_notice( 'Erro inesperado ao processar o pagamento, status: ' . $response['code'] . ' Error: ' . $response['error'], 'error' );
 
         return array(
           'result' => 'failure'
@@ -190,13 +190,6 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
         'expiracao' => 3600 
       ]
     );
-
-    if (!empty($cpf)) {
-      $data['devedor'] = [
-        'nome' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
-        'cpf' => $cpf,
-      ];
-    }
 
     $api = new Pagstar_API();
 
