@@ -403,14 +403,14 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
         // Ajuste conforme os possíveis status da Pagstar
         if ($getPayment['status'] === 'CONCLUIDA') {
-            $response = $api->devolver_transacao( $getPayment['pix'][0]['endToEndId'], $amount );
-            if ( isset( $response['status'] ) && ($response['status'] === 'EM_PROCESSAMENTO' || $response['status'] === 'DEVOLVIDO') ) {
-                $order->add_order_note( "Devolução realizado com sucesso via Pagstar. Valor: R$ {$amount}" );
-                return true;
-            } else {
-                $error_msg = isset( $response['message'] ) ? $response['message'] : 'Erro desconhecido';
-                return new WP_Error( 'pagstar_devolucao_falhou', "Falha ao devolver via Pagstar: $error_msg" );
-            }
+          $response = $api->devolver_transacao( $getPayment['pix'][0]['endToEndId'], $amount );
+          if ( isset( $response['status'] ) && ($response['status'] === 'EM_PROCESSAMENTO' || $response['status'] === 'DEVOLVIDO') ) {
+              $order->add_order_note( "Devolução realizado com sucesso via Pagstar. Valor: R$ {$amount}" );
+              return true;
+          } else {
+              $error_msg = isset( $response['message'] ) ? $response['message'] : 'Erro desconhecido';
+              return new WP_Error( 'pagstar_devolucao_falhou', "Falha ao devolver via Pagstar: $error_msg" );
+          }
         }
     } catch ( Exception $e ) {
         return new WP_Error( 'pagstar_exception', 'Erro na devolução: ' . $e->getMessage() );
