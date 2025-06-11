@@ -216,6 +216,9 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
       )
     );
 
+    $order->update_meta_data('_pagstar_txid', $res['txid']);
+    $order->save();
+
     if (!$existing_record) {
       $data_to_save = array(
         'order_id' => $order_id,
