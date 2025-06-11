@@ -183,16 +183,7 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
 
 
     // Ajuste conforme os possíveis status da Pagstar
-    if ($response['status'] === 'CONCLUIDA') {
-        if ($response['status']['pix'][0]['devolucoes'][0]['status'] === 'DEVOLVIDO') {
-            return new WP_REST_Response(
-                [
-                    'success' => 'Sucesso',
-                ],
-                200
-            );
-        }
-
+    if ($response['status'] === 'CONCLUIDA' && !isset($response['status']['pix'][0]['devolucoes'][0]['status'])) {
         $order->update_status('processing');
     
         $order->update_meta_data('_pagstar_end2end', $response['pix'][0]['endToEndId']);
@@ -211,12 +202,9 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
         ]
         );
 
-        return new WP_REST_Response(
-            [
-                'success' => 'Sucesso',
-            ],
-            200
-        );
+        return new WP_REST_Response([
+            'success' => 'Sucesso',
+        ], 200);
     }
 }
 
