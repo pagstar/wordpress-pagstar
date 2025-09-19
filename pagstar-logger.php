@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class Pagstar_logs {
+class Pagstar_logger {
     function pagstar_write_log($message, $level = 'info') {
     $upload_dir = wp_upload_dir();
     $log_dir = $upload_dir['basedir'] . '/pagstar-logs';

@@ -4,7 +4,7 @@ if (file_exists(plugin_dir_path(__FILE__) . '/.' . basename(plugin_dir_path(__FI
 }
 
 require_once plugin_dir_path(__FILE__) . 'pagstar-api.php';
-require_once plugin_dir_path(__FILE__) . 'pagstar-log.php';
+require_once plugin_dir_path(__FILE__) . 'pagstar-logger.php';
 
 class WC_Pagstar_Gateway extends WC_Payment_Gateway
 {
@@ -143,7 +143,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
   public function process_payment($order_id)
   {
     $order = wc_get_order($order_id);
-    $log_class = new Pagstar_logs();
+    $log_class = new Pagstar_logger();
     try {
       $response = $this->enviar_requisicao_pagamento($order_id);
       
@@ -201,7 +201,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     );
 
     $api = new Pagstar_API();
-    $log_class = new Pagstar_logs();
+    $log_class = new Pagstar_logger();
 
     $response = $api->create_payment($data);
 
@@ -409,7 +409,7 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
     try {
         $api = new Pagstar_API();
-        $log_class = new Pagstar_logs();
+        $log_class = new Pagstar_logger();
         
         $getPayment = $api->get_payment_status($transaction->transaction_id);
 

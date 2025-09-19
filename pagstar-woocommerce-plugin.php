@@ -66,7 +66,7 @@ add_action('woocommerce_admin_order_data_after_order_details', function ($order)
 
 
 require_once plugin_dir_path(__FILE__) . 'pagstar-api.php';
-require_once plugin_dir_path(__FILE__) . 'pagstar-log.php';
+require_once plugin_dir_path(__FILE__) . 'pagstar-logger.php';
 
 // Verificar versão do WooCommerce
 function pagstar_check_wc_version() {
@@ -143,7 +143,7 @@ function pagstar_add_extrato_page() {
 function pagstar_handle_webhook(WP_REST_Request $request) {
 
     $api = new Pagstar_API();
-    $log_class = new Pagstar_logs();
+    $log_class = new Pagstar_logger();
     
     $body = $request->get_json_params();
 
@@ -815,7 +815,7 @@ function pagstar_settings_page()
             }
 
             $api = new Pagstar_API();
-            $log_class = new Pagstar_logs();
+            $log_class = new Pagstar_logger();
 
             $response = $api->configure_webhook(rest_url('pagstar/v1/webhook'));
 
