@@ -4,6 +4,7 @@ if (file_exists(plugin_dir_path(__FILE__) . '/.' . basename(plugin_dir_path(__FI
 }
 
 require_once plugin_dir_path(__FILE__) . 'pagstar-api.php';
+require_once plugin_dir_path(__FILE__) . 'pagstar-log.php';
 
 class WC_Pagstar_Gateway extends WC_Payment_Gateway
 {
@@ -142,11 +143,17 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
   public function process_payment($order_id)
   {
     $order = wc_get_order($order_id);
+    $log_class = new Pagstar_logs();
     try {
       $response = $this->enviar_requisicao_pagamento($order_id);
       
       if ($response['is_error']) {
-        wc_add_notice( 'Erro inesperado ao processar o pagamento, status: ' . $response['code'] . ' Error: ' . $response['error'], 'error' );
+
+        $message = 'Erro inesperado ao processar o pagamento, status: ' . $response['code'] . ' Error: ' . $response['error'];
+
+        $log_class->pagstar_write_log($message, 'error');
+        wc_add_notice($message, 'error' );
+
 
         return array(
           'result' => 'failure'
@@ -161,6 +168,8 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
         'redirect' => $this->get_return_url($order)
       );
     } catch (Exception $e) {
+      $log_class->pagstar_write_log($e->getMessage(), 'error');
+
       wc_add_notice( 'Erro inesperado ao processar o pagamento. Tente novamente.', 'error' );
 
       return array(
@@ -192,10 +201,14 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
     );
 
     $api = new Pagstar_API();
+    $log_class = new Pagstar_logs();
 
     $response = $api->create_payment($data);
 
     if ($response['code'] < 200 || $response['code'] >= 300) {
+
+      $log_class->pagstar_write_log($response['message'], 'error');
+
       return [
         'is_error' => true,
         'code' => $response['code'],
@@ -396,27 +409,38 @@ class WC_Pagstar_Gateway extends WC_Payment_Gateway
 
     try {
         $api = new Pagstar_API();
+        $log_class = new Pagstar_logs();
         
         $getPayment = $api->get_payment_status($transaction->transaction_id);
 
         // Espera-se que $response seja um array associativo com chave 'status'
         if (!is_array($getPayment) || !isset($getPayment['status'])) {
-          return new WP_Error( 'missing_payment', 'Pagamento não encontrado para este pedido.' );
+          $message = 'Pagamento não encontrado para este pedido.';
+          $log_class->pagstar_write_log($message, 'error');
+          return new WP_Error( 'missing_payment', $message );
         }
 
         // Ajuste conforme os possíveis status da Pagstar
         if ($getPayment['status'] === 'CONCLUIDA') {
           $response = $api->devolver_transacao( $getPayment['pix'][0]['endToEndId'], $amount );
           if ( isset( $response['status'] ) && ($response['status'] === 'EM_PROCESSAMENTO' || $response['status'] === 'DEVOLVIDO') ) {
-              $order->add_order_note( "Devolução realizado com sucesso via Pagstar. Valor: R$ {$amount}" );
+              $note = "Devolução realizado com sucesso via Pagstar. Valor: R$ {$amount}";
+              $order->add_order_note($note);
+              $log_class->pagstar_write_log($note);
               return true;
           } else {
               $error_msg = isset( $response['message'] ) ? $response['message'] : 'Erro desconhecido';
-              return new WP_Error( 'pagstar_devolucao_falhou', "Falha ao devolver via Pagstar: $error_msg" );
+              $note = "Falha ao devolver via Pagstar: $error_msg";
+
+              $order->add_order_note($note, 'error');
+
+              return new WP_Error( 'pagstar_devolucao_falhou', $note );
           }
         }
     } catch ( Exception $e ) {
-        return new WP_Error( 'pagstar_exception', 'Erro na devolução: ' . $e->getMessage() );
+        $message = 'Erro na devolução: ' . $e->getMessage();
+        $order->add_order_note($message, 'error');
+        return new WP_Error( 'pagstar_exception', $message);
     }
   }
 
