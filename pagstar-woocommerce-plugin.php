@@ -113,6 +113,77 @@ add_action('rest_api_init', function () {
     ]);
 });
 
+add_action('admin_menu', 'pagstar_logs_admin_menu');
+
+function pagstar_logs_admin_menu() {
+    add_menu_page(
+        'Pagstar Logs',          // Título da página
+        'Pagstar Logs',          // Texto do menu
+        'manage_options',        // Permissão necessária
+        'pagstar-logs',          // Slug da página
+        'pagstar_logs_page',     // Callback que gera a página
+        'dashicons-media-text',  // Ícone
+        80                       // Posição no menu
+    );
+}
+
+function pagstar_logs_page() {
+    $upload_dir = wp_upload_dir();
+    $log_dir = $upload_dir['basedir'] . '/pagstar-logs';
+
+    if (!file_exists($log_dir)) {
+        echo '<div class="notice notice-warning"><p>Não há logs disponíveis.</p></div>';
+        return;
+    }
+
+    $files = glob($log_dir . '/*.log');
+    usort($files, function($a, $b) {
+        return filemtime($b) - filemtime($a);
+    });
+
+    echo '<div class="wrap"><h1>Logs da Pagstar</h1>';
+
+    if (empty($files)) {
+        echo '<p>Nenhum arquivo de log encontrado.</p>';
+    } else {
+        echo '<table class="widefat fixed striped">';
+        echo '<thead><tr><th>Arquivo</th><th>Última modificação</th><th>Ações</th></tr></thead><tbody>';
+
+        foreach ($files as $file) {
+            $filename = basename($file);
+            $fileurl  = $upload_dir['baseurl'] . '/pagstar-logs/' . $filename;
+            $modified = date("d/m/Y H:i:s", filemtime($file));
+
+            echo '<tr>';
+            echo '<td>' . esc_html($filename) . '</td>';
+            echo '<td>' . esc_html($modified) . '</td>';
+            echo '<td>
+                    <a href="' . esc_url(add_query_arg(['view_log' => $filename])) . '" class="button">Visualizar</a>
+                    <a href="' . esc_url($fileurl) . '" download class="button">Baixar</a>
+                  </td>';
+            echo '</tr>';
+        }
+
+        echo '</tbody></table>';
+    }
+
+    echo '</div>';
+
+    // Exibe o conteúdo do log se solicitado
+    if (isset($_GET['view_log'])) {
+        $filename = basename($_GET['view_log']);
+        $filepath = $log_dir . '/' . $filename;
+
+        if (file_exists($filepath)) {
+            $content = file_get_contents($filepath);
+            echo '<h2>Visualizando: ' . esc_html($filename) . '</h2>';
+            echo '<textarea readonly style="width:100%;height:400px;font-family:monospace;">' 
+                 . esc_textarea($content) . '</textarea>';
+        } else {
+            echo '<div class="notice notice-error"><p>Arquivo não encontrado.</p></div>';
+        }
+    }
+}
 
 
 // Adicionar link de configuração rápida
