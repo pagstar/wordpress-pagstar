@@ -345,7 +345,7 @@ add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'pagstar_add_acti
 add_action('admin_menu', 'pagstar_add_extrato_page');
 
 function pagstar_add_extrato_page() {
-    add_menu_page(
+    add_submenu_page(
         'woocommerce',
         'Extrato Pagstar',     // Título da página
         'Extrato Pagstar',     // Nome do menu
@@ -362,8 +362,6 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
     
     $body = $request->get_json_params();
 
-    $log_class->pagstar_write_log('Webhook recebido: ' . print_r($body, true));
-
     // Verifica se os dados básicos estão presentes
     if (!isset($body['txid'])) {
         $log_class->pagstar_write_log('Webhook error: Dados incompletos: ' . print_r($body, true), 'error');
@@ -371,6 +369,8 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
     }
 
     $txid = sanitize_text_field($body['txid']);
+
+    $log_class->pagstar_write_log('Webhook recebido: ' . print_r($body, true), 'info', 'webhook', $txid);
 
     // Encontra o pedido no WooCommerce
     // $order = wc_get_order($txid);
@@ -386,28 +386,28 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
     );
 
     if (!$transaction) {
-        $log_class->pagstar_write_log('Webhook error: Pedido não encontrado, respoosta da consulta: ' . print_r($transaction, true), 'error');
+        $log_class->pagstar_write_log('Webhook error: Pedido não encontrado, respoosta da consulta: ' . print_r($transaction, true), 'error', 'webhook', $txid);
         return new WP_REST_Response(['error' => 'Pedido não encontrado'], 404);
     }
 
     $order = wc_get_order($transaction->order_id);
 
     if (!$order) {
-        $log_class->pagstar_write_log('Webhook error: Orden de pedido não encontrado, respoosta da consulta: ' . print_r($order, true), 'error');
+        $log_class->pagstar_write_log('Webhook error: Orden de pedido não encontrado, respoosta da consulta: ' . print_r($order, true), 'error', 'webhook', $txid);
         return new WP_REST_Response(['error' => 'Pedido não encontrado'], 404);
     }
 
     $response = $api->get_payment_status($txid);
 
     if (!is_array($response) || !isset($response['status'])) {
-        $log_class->pagstar_write_log('Webhook error: Resposta inválida da API: ' . print_r($response, true), 'error');
+        $log_class->pagstar_write_log('Webhook error: Resposta inválida da API: ' . print_r($response, true), 'error', 'webhook', $txid);
         return new WP_REST_Response([
             'error' => 'Resposta inválida da API'
         ], 400);
     }
 
     if (!empty($response['pix'][0]['devolucoes'])) {
-        $log_class->pagstar_write_log('Webhook info: Notificação de devolução: ' . print_r($response, true));
+        $log_class->pagstar_write_log('Webhook info: Notificação de devolução: ' . print_r($response, true), 'webhook', $txid);
         return new WP_REST_Response(['info' => 'Notificação de devolução'], 200);
     }
 
@@ -432,7 +432,7 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
         ]
         );
 
-        $log_class->pagstar_write_log('Webhook info: Webhook processado com sucesso: ' . print_r($response, true) . '  ' . print_r($order, true));
+        $log_class->pagstar_write_log('Webhook info: Webhook processado com sucesso: ' . print_r($response, true) . ', Order: ' . print_r($order, true), 'webhook', $txid);
 
         return new WP_REST_Response(
             [
