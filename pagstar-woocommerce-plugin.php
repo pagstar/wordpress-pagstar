@@ -135,39 +135,58 @@ function pagstar_logs_page() {
         return;
     }
 
-    // Pega datas do filtro
+    // Pega filtros
     $start_date = isset($_GET['start_date']) ? sanitize_text_field($_GET['start_date']) : '';
     $end_date   = isset($_GET['end_date'])   ? sanitize_text_field($_GET['end_date'])   : '';
+    $order      = isset($_GET['order']) ? sanitize_text_field($_GET['order']) : 'desc'; // padrão: mais recente primeiro
 
-    // Formulário de pesquisa
+    // Formulário
     echo '<div class="wrap"><h1>Logs da Pagstar</h1>';
     echo '<form method="get" style="margin-bottom:20px;">';
     echo '<input type="hidden" name="page" value="pagstar-logs" />';
     echo 'De: <input type="date" name="start_date" value="' . esc_attr($start_date) . '" />';
     echo 'Até: <input type="date" name="end_date" value="' . esc_attr($end_date) . '" />';
-    echo '<input type="submit" class="button" value="Filtrar" />';
+    echo '<input type="submit" class="button" value="Filtrar" /> ';
+
+    // Botão de alternar ordem
+    $new_order = ($order === 'desc') ? 'asc' : 'desc';
+    echo '<a href="' . esc_url(add_query_arg(['page'=>'pagstar-logs','start_date'=>$start_date,'end_date'=>$end_date,'order'=>$new_order])) . '" class="button">';
+    echo ($order === 'desc') ? 'Ordenar do mais antigo → mais recente' : 'Ordenar do mais recente → mais antigo';
+    echo '</a>';
     echo '</form>';
 
-    // Lista os arquivos
+    // Lista arquivos
     $files = glob($log_dir . '/*.log');
-    usort($files, function($a, $b) {
-        return filemtime($b) - filemtime($a);
+
+    usort($files, function($a, $b) use ($order) {
+        $a_name = basename($a, '.log');
+        $b_name = basename($b, '.log');
+
+        $a_parts = explode('-', $a_name);
+        $b_parts = explode('-', $b_name);
+
+        $a_date = implode('-', array_slice($a_parts, -3));
+        $b_date = implode('-', array_slice($b_parts, -3));
+
+        $a_time = strtotime($a_date);
+        $b_time = strtotime($b_date);
+
+        return ($order === 'desc') ? ($b_time <=> $a_time) : ($a_time <=> $b_time);
     });
 
-    // Aplica filtro por data
+    // Filtro por data
     if ($start_date || $end_date) {
         $files = array_filter($files, function($file) use ($start_date, $end_date) {
-            $filename = basename($file, '.log'); // pega só o "YYYY-MM-DD"
-            $file_date = DateTime::createFromFormat('Y-m-d', $filename);
+            $filename = basename($file, '.log');
+            $parts = explode('-', $filename);
+            $file_date = implode('-', array_slice($parts, -3));
+            $dateObj = DateTime::createFromFormat('Y-m-d', $file_date);
 
-            if (!$file_date) return false;
+            if (!$dateObj) return false;
 
-            if ($start_date && $file_date < new DateTime($start_date)) {
-                return false;
-            }
-            if ($end_date && $file_date > new DateTime($end_date)) {
-                return false;
-            }
+            if ($start_date && $dateObj < new DateTime($start_date)) return false;
+            if ($end_date && $dateObj > new DateTime($end_date)) return false;
+
             return true;
         });
     }
@@ -187,7 +206,7 @@ function pagstar_logs_page() {
             echo '<td>' . esc_html($filename) . '</td>';
             echo '<td>' . esc_html($modified) . '</td>';
             echo '<td>
-                    <a href="' . esc_url(add_query_arg(['page' => 'pagstar-logs', 'view_log' => $filename])) . '" class="button">Visualizar</a>
+                    <a href="' . esc_url(add_query_arg(['page'=>'pagstar-logs','view_log'=>$filename])) . '" class="button">Visualizar</a>
                     <a href="' . esc_url($fileurl) . '" download class="button">Baixar</a>
                   </td>';
             echo '</tr>';
@@ -198,7 +217,7 @@ function pagstar_logs_page() {
 
     echo '</div>';
 
-    // Exibe o conteúdo do log se solicitado
+    // Visualizar conteúdo
     if (isset($_GET['view_log'])) {
         $filename = basename($_GET['view_log']);
         $filepath = $log_dir . '/' . $filename;
@@ -213,6 +232,8 @@ function pagstar_logs_page() {
         }
     }
 }
+
+
 
 
 add_action('admin_menu', 'pagstar_logs_webhook_admin_menu');
@@ -240,69 +261,77 @@ function pagstar_logs_webhooks_page() {
     // Pega filtros
     $start_date = isset($_GET['start_date']) ? sanitize_text_field($_GET['start_date']) : '';
     $end_date   = isset($_GET['end_date'])   ? sanitize_text_field($_GET['end_date'])   : '';
-    $txid       = isset($_GET['txid'])       ? sanitize_text_field($_GET['txid'])       : '';
+    $order      = isset($_GET['order']) ? sanitize_text_field($_GET['order']) : 'desc';
 
-    // Formulário de pesquisa
-    echo '<div class="wrap"><h1>Logs de webhooks da Pagstar</h1>';
+    // Formulário
+    echo '<div class="wrap"><h1>Logs de Webhooks da Pagstar</h1>';
     echo '<form method="get" style="margin-bottom:20px;">';
     echo '<input type="hidden" name="page" value="pagstar-logs-webhooks" />';
-    echo 'De: <input type="date" name="start_date" value="' . esc_attr($start_date) . '" /> ';
-    echo 'Até: <input type="date" name="end_date" value="' . esc_attr($end_date) . '" /> ';
-    echo 'Txid: <input type="text" name="txid" value="' . esc_attr($txid) . '" placeholder="Digite o txid" /> ';
-    echo '<input type="submit" class="button" value="Filtrar" />';
+    echo 'De: <input type="date" name="start_date" value="' . esc_attr($start_date) . '" />';
+    echo 'Até: <input type="date" name="end_date" value="' . esc_attr($end_date) . '" />';
+    echo '<input type="submit" class="button" value="Filtrar" /> ';
+
+    $new_order = ($order === 'desc') ? 'asc' : 'desc';
+    echo '<a href="' . esc_url(add_query_arg(['page'=>'pagstar-logs-webhooks','start_date'=>$start_date,'end_date'=>$end_date,'order'=>$new_order])) . '" class="button">';
+    echo ($order === 'desc') ? 'Ordenar do mais antigo → mais recente' : 'Ordenar do mais recente → mais antigo';
+    echo '</a>';
     echo '</form>';
 
-    // Lista os arquivos
+    // Lista arquivos
     $files = glob($log_dir . '/*.log');
-    usort($files, function($a, $b) {
-        return filemtime($b) - filemtime($a);
+
+    usort($files, function($a, $b) use ($order) {
+        $a_name = basename($a, '.log');
+        $b_name = basename($b, '.log');
+
+        $a_parts = explode('-', $a_name);
+        $b_parts = explode('-', $b_name);
+
+        $a_date = implode('-', array_slice($a_parts, -3));
+        $b_date = implode('-', array_slice($b_parts, -3));
+
+        $a_time = strtotime($a_date);
+        $b_time = strtotime($b_date);
+
+        return ($order === 'desc') ? ($b_time <=> $a_time) : ($a_time <=> $b_time);
     });
 
-    // Aplica filtro por data e txid
-    $files = array_filter($files, function($file) use ($start_date, $end_date, $txid) {
-        $filename = basename($file, '.log'); // exemplo: "abc123-2025-09-19"
-        $parts = explode('-', $filename, 2); // [txid, YYYY-MM-DD]
+    // Filtro por data
+    if ($start_date || $end_date) {
+        $files = array_filter($files, function($file) use ($start_date, $end_date) {
+            $filename = basename($file, '.log');
+            $parts = explode('-', $filename);
+            $file_date = implode('-', array_slice($parts, -3));
+            $dateObj = DateTime::createFromFormat('Y-m-d', $file_date);
 
-        if (count($parts) < 2) return false;
+            if (!$dateObj) return false;
+            if ($start_date && $dateObj < new DateTime($start_date)) return false;
+            if ($end_date && $dateObj > new DateTime($end_date)) return false;
 
-        $file_txid = $parts[0];
-        $file_date = DateTime::createFromFormat('Y-m-d', $parts[1]);
-
-        if (!$file_date) return false;
-
-        if ($start_date && $file_date < new DateTime($start_date)) {
-            return false;
-        }
-        if ($end_date && $file_date > new DateTime($end_date)) {
-            return false;
-        }
-        if ($txid && stripos($file_txid, $txid) === false) {
-            return false;
-        }
-
-        return true;
-    });
+            return true;
+        });
+    }
 
     if (empty($files)) {
-        echo '<p>Nenhum arquivo de log encontrado nesse filtro.</p>';
+        echo '<p>Nenhum arquivo de log encontrado nesse período.</p>';
     } else {
         echo '<table class="widefat fixed striped">';
         echo '<thead><tr><th>Txid</th><th>Arquivo</th><th>Última modificação</th><th>Ações</th></tr></thead><tbody>';
 
         foreach ($files as $file) {
-            $filename = basename($file); // exemplo: abc123-2025-09-19.log
-            $parts = explode('-', $filename, 2);
-            $file_txid = $parts[0] ?? 'desconhecido';
-
+            $filename = basename($file);
             $fileurl  = $upload_dir['baseurl'] . '/pagstar-logs-webhooks/' . $filename;
             $modified = wp_date("d/m/Y H:i:s", filemtime($file));
 
+            // Txid = tudo antes da última parte "-YYYY-MM-DD.log"
+            $txid = preg_replace('/-\d{4}-\d{2}-\d{2}\.log$/', '', $filename);
+
             echo '<tr>';
-            echo '<td>' . esc_html($file_txid) . '</td>';
+            echo '<td>' . esc_html($txid) . '</td>';
             echo '<td>' . esc_html($filename) . '</td>';
             echo '<td>' . esc_html($modified) . '</td>';
             echo '<td>
-                    <a href="' . esc_url(add_query_arg(['page' => 'pagstar-logs-webhooks', 'view_log' => $filename])) . '" class="button">Visualizar</a>
+                    <a href="' . esc_url(add_query_arg(['page'=>'pagstar-logs-webhooks','view_log'=>$filename])) . '" class="button">Visualizar</a>
                     <a href="' . esc_url($fileurl) . '" download class="button">Baixar</a>
                   </td>';
             echo '</tr>';
@@ -313,7 +342,7 @@ function pagstar_logs_webhooks_page() {
 
     echo '</div>';
 
-    // Exibe o conteúdo do log se solicitado
+    // Visualizar conteúdo
     if (isset($_GET['view_log'])) {
         $filename = basename($_GET['view_log']);
         $filepath = $log_dir . '/' . $filename;
@@ -328,6 +357,7 @@ function pagstar_logs_webhooks_page() {
         }
     }
 }
+
 
 
 
