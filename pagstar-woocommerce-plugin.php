@@ -284,15 +284,21 @@ function pagstar_logs_webhooks_page() {
         $a_name = basename($a, '.log');
         $b_name = basename($b, '.log');
 
+        // Pega a parte da data (depois do último "-")
         $a_parts = explode('-', $a_name);
         $b_parts = explode('-', $b_name);
 
+        $a_date = end($a_parts); // pode vir só "20" se for quebrado em partes pequenas
+        $b_date = end($b_parts);
+
+        // Junta os últimos 3 elementos (YYYY-MM-DD)
         $a_date = implode('-', array_slice($a_parts, -3));
         $b_date = implode('-', array_slice($b_parts, -3));
 
         $a_time = strtotime($a_date);
         $b_time = strtotime($b_date);
 
+        // Ordena do mais recente para o mais antigo
         return ($order === 'desc') ? ($b_time <=> $a_time) : ($a_time <=> $b_time);
     });
 
