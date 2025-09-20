@@ -116,14 +116,13 @@ add_action('rest_api_init', function () {
 add_action('admin_menu', 'pagstar_logs_admin_menu');
 
 function pagstar_logs_admin_menu() {
-    add_menu_page(
+    add_submenu_page(
+        'woocommerce',           // Slug do menu pai (WooCommerce)
         'Pagstar Logs',          // Título da página
         'Pagstar Logs',          // Texto do menu
-        'manage_options',        // Permissão necessária
+        'manage_woocommerce',        // Permissão necessária
         'pagstar-logs',          // Slug da página
         'pagstar_logs_page',     // Callback que gera a página
-        'dashicons-media-text',  // Ícone
-        80                       // Posição no menu
     );
 }
 
@@ -136,15 +135,45 @@ function pagstar_logs_page() {
         return;
     }
 
+    // Pega datas do filtro
+    $start_date = isset($_GET['start_date']) ? sanitize_text_field($_GET['start_date']) : '';
+    $end_date   = isset($_GET['end_date'])   ? sanitize_text_field($_GET['end_date'])   : '';
+
+    // Formulário de pesquisa
+    echo '<div class="wrap"><h1>Logs da Pagstar</h1>';
+    echo '<form method="get" style="margin-bottom:20px;">';
+    echo '<input type="hidden" name="page" value="pagstar-logs" />';
+    echo 'De: <input type="date" name="start_date" value="' . esc_attr($start_date) . '" />';
+    echo 'Até: <input type="date" name="end_date" value="' . esc_attr($end_date) . '" />';
+    echo '<input type="submit" class="button" value="Filtrar" />';
+    echo '</form>';
+
+    // Lista os arquivos
     $files = glob($log_dir . '/*.log');
     usort($files, function($a, $b) {
         return filemtime($b) - filemtime($a);
     });
 
-    echo '<div class="wrap"><h1>Logs da Pagstar</h1>';
+    // Aplica filtro por data
+    if ($start_date || $end_date) {
+        $files = array_filter($files, function($file) use ($start_date, $end_date) {
+            $filename = basename($file, '.log'); // pega só o "YYYY-MM-DD"
+            $file_date = DateTime::createFromFormat('Y-m-d', $filename);
+
+            if (!$file_date) return false;
+
+            if ($start_date && $file_date < new DateTime($start_date)) {
+                return false;
+            }
+            if ($end_date && $file_date > new DateTime($end_date)) {
+                return false;
+            }
+            return true;
+        });
+    }
 
     if (empty($files)) {
-        echo '<p>Nenhum arquivo de log encontrado.</p>';
+        echo '<p>Nenhum arquivo de log encontrado nesse período.</p>';
     } else {
         echo '<table class="widefat fixed striped">';
         echo '<thead><tr><th>Arquivo</th><th>Última modificação</th><th>Ações</th></tr></thead><tbody>';
@@ -158,7 +187,7 @@ function pagstar_logs_page() {
             echo '<td>' . esc_html($filename) . '</td>';
             echo '<td>' . esc_html($modified) . '</td>';
             echo '<td>
-                    <a href="' . esc_url(add_query_arg(['view_log' => $filename])) . '" class="button">Visualizar</a>
+                    <a href="' . esc_url(add_query_arg(['page' => 'pagstar-logs', 'view_log' => $filename])) . '" class="button">Visualizar</a>
                     <a href="' . esc_url($fileurl) . '" download class="button">Baixar</a>
                   </td>';
             echo '</tr>';
@@ -186,6 +215,122 @@ function pagstar_logs_page() {
 }
 
 
+add_action('admin_menu', 'pagstar_logs_webhook_admin_menu');
+
+function pagstar_logs_webhook_admin_menu() {
+    add_submenu_page(
+        'woocommerce',           // Slug do menu pai (WooCommerce)
+        'Pagstar Logs (Webhooks)',          // Título da página
+        'Pagstar Logs (Webhooks)',          // Texto do menu
+        'manage_woocommerce',        // Permissão necessária
+        'pagstar-logs-webhooks',          // Slug da página
+        'pagstar_logs_webhooks_page',     // Callback que gera a página
+    );
+}
+
+function pagstar_logs_webhooks_page() {
+    $upload_dir = wp_upload_dir();
+    $log_dir = $upload_dir['basedir'] . '/pagstar-logs-webhooks';
+
+    if (!file_exists($log_dir)) {
+        echo '<div class="notice notice-warning"><p>Não há logs disponíveis.</p></div>';
+        return;
+    }
+
+    // Pega filtros
+    $start_date = isset($_GET['start_date']) ? sanitize_text_field($_GET['start_date']) : '';
+    $end_date   = isset($_GET['end_date'])   ? sanitize_text_field($_GET['end_date'])   : '';
+    $txid       = isset($_GET['txid'])       ? sanitize_text_field($_GET['txid'])       : '';
+
+    // Formulário de pesquisa
+    echo '<div class="wrap"><h1>Logs de webhooks da Pagstar</h1>';
+    echo '<form method="get" style="margin-bottom:20px;">';
+    echo '<input type="hidden" name="page" value="pagstar-logs-webhooks" />';
+    echo 'De: <input type="date" name="start_date" value="' . esc_attr($start_date) . '" /> ';
+    echo 'Até: <input type="date" name="end_date" value="' . esc_attr($end_date) . '" /> ';
+    echo 'Txid: <input type="text" name="txid" value="' . esc_attr($txid) . '" placeholder="Digite o txid" /> ';
+    echo '<input type="submit" class="button" value="Filtrar" />';
+    echo '</form>';
+
+    // Lista os arquivos
+    $files = glob($log_dir . '/*.log');
+    usort($files, function($a, $b) {
+        return filemtime($b) - filemtime($a);
+    });
+
+    // Aplica filtro por data e txid
+    $files = array_filter($files, function($file) use ($start_date, $end_date, $txid) {
+        $filename = basename($file, '.log'); // exemplo: "abc123-2025-09-19"
+        $parts = explode('-', $filename, 2); // [txid, YYYY-MM-DD]
+
+        if (count($parts) < 2) return false;
+
+        $file_txid = $parts[0];
+        $file_date = DateTime::createFromFormat('Y-m-d', $parts[1]);
+
+        if (!$file_date) return false;
+
+        if ($start_date && $file_date < new DateTime($start_date)) {
+            return false;
+        }
+        if ($end_date && $file_date > new DateTime($end_date)) {
+            return false;
+        }
+        if ($txid && stripos($file_txid, $txid) === false) {
+            return false;
+        }
+
+        return true;
+    });
+
+    if (empty($files)) {
+        echo '<p>Nenhum arquivo de log encontrado nesse filtro.</p>';
+    } else {
+        echo '<table class="widefat fixed striped">';
+        echo '<thead><tr><th>Txid</th><th>Arquivo</th><th>Última modificação</th><th>Ações</th></tr></thead><tbody>';
+
+        foreach ($files as $file) {
+            $filename = basename($file); // exemplo: abc123-2025-09-19.log
+            $parts = explode('-', $filename, 2);
+            $file_txid = $parts[0] ?? 'desconhecido';
+
+            $fileurl  = $upload_dir['baseurl'] . '/pagstar-logs-webhooks/' . $filename;
+            $modified = date("d/m/Y H:i:s", filemtime($file));
+
+            echo '<tr>';
+            echo '<td>' . esc_html($file_txid) . '</td>';
+            echo '<td>' . esc_html($filename) . '</td>';
+            echo '<td>' . esc_html($modified) . '</td>';
+            echo '<td>
+                    <a href="' . esc_url(add_query_arg(['page' => 'pagstar-logs-webhooks', 'view_log' => $filename])) . '" class="button">Visualizar</a>
+                    <a href="' . esc_url($fileurl) . '" download class="button">Baixar</a>
+                  </td>';
+            echo '</tr>';
+        }
+
+        echo '</tbody></table>';
+    }
+
+    echo '</div>';
+
+    // Exibe o conteúdo do log se solicitado
+    if (isset($_GET['view_log'])) {
+        $filename = basename($_GET['view_log']);
+        $filepath = $log_dir . '/' . $filename;
+
+        if (file_exists($filepath)) {
+            $content = file_get_contents($filepath);
+            echo '<h2>Visualizando: ' . esc_html($filename) . '</h2>';
+            echo '<textarea readonly style="width:100%;height:400px;font-family:monospace;">' 
+                 . esc_textarea($content) . '</textarea>';
+        } else {
+            echo '<div class="notice notice-error"><p>Arquivo não encontrado.</p></div>';
+        }
+    }
+}
+
+
+
 // Adicionar link de configuração rápida
 function pagstar_add_action_links($links)
 {
@@ -201,13 +346,12 @@ add_action('admin_menu', 'pagstar_add_extrato_page');
 
 function pagstar_add_extrato_page() {
     add_menu_page(
+        'woocommerce',
         'Extrato Pagstar',     // Título da página
         'Extrato Pagstar',     // Nome do menu
-        'manage_options',      // Capacidade necessária para acessar a página
+        'manage_woocommerce',      // Capacidade necessária para acessar a página
         'pagstar-extrato',     // Slug da página
         'pagstar_render_extrato_page', // Função de callback para renderizar a página
-        'dashicons-chart-area', // Ícone do menu (opcional)
-        25                     // Posição do menu no painel (opcional)
     );
 }
 
