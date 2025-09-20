@@ -3,7 +3,7 @@
  * Plugin Name: Pagstar
  * Plugin URI: https://pagstar.com.br
  * Description: Plugin de integração com a Pagstar para WordPress
- * Version: 1.0.9
+ * Version: 1.1.0
  * Author: Pagstar
  * Author URI: https://pagstar.com.br
  * License: GPLv2
@@ -181,7 +181,7 @@ function pagstar_logs_page() {
         foreach ($files as $file) {
             $filename = basename($file);
             $fileurl  = $upload_dir['baseurl'] . '/pagstar-logs/' . $filename;
-            $modified = date("d/m/Y H:i:s", filemtime($file));
+            $modified = wp_date("d/m/Y H:i:s", filemtime($file));
 
             echo '<tr>';
             echo '<td>' . esc_html($filename) . '</td>';
@@ -295,7 +295,7 @@ function pagstar_logs_webhooks_page() {
             $file_txid = $parts[0] ?? 'desconhecido';
 
             $fileurl  = $upload_dir['baseurl'] . '/pagstar-logs-webhooks/' . $filename;
-            $modified = date("d/m/Y H:i:s", filemtime($file));
+            $modified = wp_date("d/m/Y H:i:s", filemtime($file));
 
             echo '<tr>';
             echo '<td>' . esc_html($file_txid) . '</td>';
@@ -407,7 +407,7 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
     }
 
     if (!empty($response['pix'][0]['devolucoes'])) {
-        $log_class->pagstar_write_log('Webhook info: Notificação de devolução: ' . print_r($response, true), 'webhook', $txid);
+        $log_class->pagstar_write_log('Webhook info: Notificação de devolução: ' . print_r($response, true), 'info', 'webhook', $txid);
         return new WP_REST_Response(['info' => 'Notificação de devolução'], 200);
     }
 
@@ -432,7 +432,7 @@ function pagstar_handle_webhook(WP_REST_Request $request) {
         ]
         );
 
-        $log_class->pagstar_write_log('Webhook info: Webhook processado com sucesso: ' . print_r($response, true) . ', Order: ' . print_r($order, true), 'webhook', $txid);
+        $log_class->pagstar_write_log('Webhook info: Webhook processado com sucesso: ' . print_r($response, true) . ', OrderId: ' . $transaction->order_id, 'info', 'webhook', $txid);
 
         return new WP_REST_Response(
             [
